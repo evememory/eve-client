@@ -30,13 +30,13 @@ Request access at [evemem.com](https://evemem.com). After provisioning, sign in 
 **2. Install the client**
 
 ```bash
-uv tool install git+https://github.com/sherifkozman/eve-mcp.git
+uv tool install git+https://github.com/evememory/eve-client.git
 ```
 
 No uv? Use:
 
 ```bash
-pipx install git+https://github.com/sherifkozman/eve-mcp.git
+pipx install git+https://github.com/evememory/eve-client.git
 ```
 
 Verify: `eve version`
@@ -60,7 +60,7 @@ Expected output:
 
 > **What just happened?** Eve installed four lifecycle hooks. From this point forward, every Claude Code session starts with your memory context pre-loaded, and ends with new learnings captured. You never need to ask Claude to use Eve.
 
-If `eve connect` fails: run `eve doctor --tool claude-code` and check the diagnostics output. Open an issue at [github.com/sherifkozman/eve-mcp](https://github.com/sherifkozman/eve-mcp/issues).
+If `eve connect` fails: run `eve doctor --tool claude-code` and check the diagnostics output. Open an issue at [github.com/evememory/eve-client](https://github.com/evememory/eve-client/issues).
 
 **4. Test memory across sessions**
 
@@ -90,19 +90,19 @@ Before installing the client, get an Eve workspace:
 Preferred:
 
 ```bash
-uv tool install git+https://github.com/sherifkozman/eve-mcp.git
+uv tool install git+https://github.com/evememory/eve-client.git
 ```
 
 Alternative:
 
 ```bash
-pipx install git+https://github.com/sherifkozman/eve-mcp.git
+pipx install git+https://github.com/evememory/eve-client.git
 ```
 
 Or via the standalone bash installer. Save it first; do not pipe remote shell directly into `sh`:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/sherifkozman/eve-mcp/main/install.sh -o install-eve.sh
+curl -fsSL https://raw.githubusercontent.com/evememory/eve-client/main/install.sh -o install-eve.sh
 sh install-eve.sh
 ```
 
