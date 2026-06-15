@@ -8,6 +8,7 @@ import venv
 import zipfile
 from pathlib import Path
 
+
 def _find_package_root() -> Path:
     for parent in Path(__file__).resolve().parents:
         if (parent / "pyproject.toml").exists() and (parent / "eve_client").is_dir():
@@ -295,10 +296,17 @@ def test_publish_script_dry_run_checks_artifacts_without_uploading(tmp_path: Pat
     dist_dir = tmp_path / "dist"
     bin_dir = tmp_path / "bin"
     log_path = tmp_path / "commands.log"
+    package_version = _package_version()
     dist_dir.mkdir()
     bin_dir.mkdir()
-    (dist_dir / "eve_memory_client-0.0.0.tar.gz").write_text("sdist", encoding="utf-8")
-    (dist_dir / "eve_memory_client-0.0.0-py3-none-any.whl").write_text("wheel", encoding="utf-8")
+    (dist_dir / f"eve_memory_client-{package_version}.tar.gz").write_text(
+        "sdist",
+        encoding="utf-8",
+    )
+    (dist_dir / f"eve_memory_client-{package_version}-py3-none-any.whl").write_text(
+        "wheel",
+        encoding="utf-8",
+    )
     (bin_dir / "uv").write_text(
         "#!/usr/bin/env bash\n"
         "echo uv \"$@\" >> \"$EVE_TEST_COMMAND_LOG\"\n",
@@ -343,10 +351,17 @@ def test_publish_script_default_mode_checks_artifacts_without_uploading(tmp_path
     dist_dir = tmp_path / "dist"
     bin_dir = tmp_path / "bin"
     log_path = tmp_path / "commands.log"
+    package_version = _package_version()
     dist_dir.mkdir()
     bin_dir.mkdir()
-    (dist_dir / "eve_memory_client-0.0.0.tar.gz").write_text("sdist", encoding="utf-8")
-    (dist_dir / "eve_memory_client-0.0.0-py3-none-any.whl").write_text("wheel", encoding="utf-8")
+    (dist_dir / f"eve_memory_client-{package_version}.tar.gz").write_text(
+        "sdist",
+        encoding="utf-8",
+    )
+    (dist_dir / f"eve_memory_client-{package_version}-py3-none-any.whl").write_text(
+        "wheel",
+        encoding="utf-8",
+    )
     (bin_dir / "uv").write_text(
         "#!/usr/bin/env bash\n"
         "echo uv \"$@\" >> \"$EVE_TEST_COMMAND_LOG\"\n",
@@ -385,14 +400,88 @@ def test_publish_script_default_mode_checks_artifacts_without_uploading(tmp_path
     assert "Dry run complete; not publishing" in result.stdout
 
 
+def test_publish_script_rejects_duplicate_or_extra_artifacts_when_skip_build(
+    tmp_path: Path,
+) -> None:
+    assert PUBLISH_SCRIPT.exists()
+    dist_dir = tmp_path / "dist"
+    dist_dir.mkdir()
+    (dist_dir / "eve_memory_client-0.0.0.tar.gz").write_text("sdist", encoding="utf-8")
+    (dist_dir / "eve_memory_client-0.0.1.tar.gz").write_text("other sdist", encoding="utf-8")
+    (dist_dir / "eve_memory_client-0.0.0-py3-none-any.whl").write_text(
+        "wheel",
+        encoding="utf-8",
+    )
+    (dist_dir / "unexpected.txt").write_text("stale", encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            "bash",
+            str(PUBLISH_SCRIPT),
+            "--dry-run",
+            "--skip-build",
+            "--dist-dir",
+            str(dist_dir),
+        ],
+        cwd=str(REPO_ROOT),
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode != 0
+    assert (
+        "Expected exactly one eve-memory-client sdist and one wheel"
+        in result.stderr
+    )
+    assert "Found sdists=2 wheels=1 extra=1" in result.stderr
+
+
+def test_publish_script_rejects_artifacts_that_do_not_match_pyproject_version(
+    tmp_path: Path,
+) -> None:
+    assert PUBLISH_SCRIPT.exists()
+    dist_dir = tmp_path / "dist"
+    dist_dir.mkdir()
+    (dist_dir / "eve_memory_client-0.0.0.tar.gz").write_text("sdist", encoding="utf-8")
+    (dist_dir / "eve_memory_client-0.0.0-py3-none-any.whl").write_text(
+        "wheel",
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [
+            "bash",
+            str(PUBLISH_SCRIPT),
+            "--dry-run",
+            "--skip-build",
+            "--dist-dir",
+            str(dist_dir),
+        ],
+        cwd=str(REPO_ROOT),
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode != 0
+    assert "Expected artifact filenames to match pyproject version" in result.stderr
+    assert f"pyproject version {_package_version()}" in result.stderr
+
+
 def test_publish_script_requires_token_for_real_publish(tmp_path: Path) -> None:
     assert PUBLISH_SCRIPT.exists()
     dist_dir = tmp_path / "dist"
     bin_dir = tmp_path / "bin"
+    package_version = _package_version()
     dist_dir.mkdir()
     bin_dir.mkdir()
-    (dist_dir / "eve_memory_client-0.0.0.tar.gz").write_text("sdist", encoding="utf-8")
-    (dist_dir / "eve_memory_client-0.0.0-py3-none-any.whl").write_text("wheel", encoding="utf-8")
+    (dist_dir / f"eve_memory_client-{package_version}.tar.gz").write_text(
+        "sdist",
+        encoding="utf-8",
+    )
+    (dist_dir / f"eve_memory_client-{package_version}-py3-none-any.whl").write_text(
+        "wheel",
+        encoding="utf-8",
+    )
     (bin_dir / "uvx").write_text("#!/usr/bin/env bash\n", encoding="utf-8")
     (bin_dir / "uvx").chmod(0o755)
 
@@ -427,10 +516,17 @@ def test_publish_script_uses_trusted_publishing_in_github_actions_without_token(
     dist_dir = tmp_path / "dist"
     bin_dir = tmp_path / "bin"
     log_path = tmp_path / "commands.log"
+    package_version = _package_version()
     dist_dir.mkdir()
     bin_dir.mkdir()
-    (dist_dir / "eve_memory_client-0.0.0.tar.gz").write_text("sdist", encoding="utf-8")
-    (dist_dir / "eve_memory_client-0.0.0-py3-none-any.whl").write_text("wheel", encoding="utf-8")
+    (dist_dir / f"eve_memory_client-{package_version}.tar.gz").write_text(
+        "sdist",
+        encoding="utf-8",
+    )
+    (dist_dir / f"eve_memory_client-{package_version}-py3-none-any.whl").write_text(
+        "wheel",
+        encoding="utf-8",
+    )
     (bin_dir / "uv").write_text(
         "#!/usr/bin/env bash\n"
         "echo uv \"$@\" >> \"$EVE_TEST_COMMAND_LOG\"\n",
@@ -471,6 +567,53 @@ def test_publish_script_uses_trusted_publishing_in_github_actions_without_token(
     assert "secret-token" not in command_log
 
 
+def test_publish_script_rejects_token_auth_in_github_actions(
+    tmp_path: Path,
+) -> None:
+    assert PUBLISH_SCRIPT.exists()
+    dist_dir = tmp_path / "dist"
+    bin_dir = tmp_path / "bin"
+    package_version = _package_version()
+    dist_dir.mkdir()
+    bin_dir.mkdir()
+    (dist_dir / f"eve_memory_client-{package_version}.tar.gz").write_text(
+        "sdist",
+        encoding="utf-8",
+    )
+    (dist_dir / f"eve_memory_client-{package_version}-py3-none-any.whl").write_text(
+        "wheel",
+        encoding="utf-8",
+    )
+    (bin_dir / "uvx").write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+    (bin_dir / "uvx").chmod(0o755)
+
+    result = subprocess.run(
+        [
+            "bash",
+            str(PUBLISH_SCRIPT),
+            "--publish",
+            "--skip-build",
+            "--dist-dir",
+            str(dist_dir),
+        ],
+        cwd=str(REPO_ROOT),
+        text=True,
+        capture_output=True,
+        env={
+            **os.environ,
+            "PATH": f"{bin_dir}:{os.environ['PATH']}",
+            "GITHUB_ACTIONS": "true",
+            "PYPI_API_TOKEN": "secret-token",
+        },
+    )
+
+    assert result.returncode != 0
+    assert (
+        "Refusing PYPI_API_TOKEN in GitHub Actions; use PyPI Trusted Publishing"
+        in result.stderr
+    )
+
+
 def test_publish_script_uses_env_token_without_putting_secret_on_command_line(
     tmp_path: Path,
 ) -> None:
@@ -478,10 +621,17 @@ def test_publish_script_uses_env_token_without_putting_secret_on_command_line(
     dist_dir = tmp_path / "dist"
     bin_dir = tmp_path / "bin"
     log_path = tmp_path / "commands.log"
+    package_version = _package_version()
     dist_dir.mkdir()
     bin_dir.mkdir()
-    (dist_dir / "eve_memory_client-0.0.0.tar.gz").write_text("sdist", encoding="utf-8")
-    (dist_dir / "eve_memory_client-0.0.0-py3-none-any.whl").write_text("wheel", encoding="utf-8")
+    (dist_dir / f"eve_memory_client-{package_version}.tar.gz").write_text(
+        "sdist",
+        encoding="utf-8",
+    )
+    (dist_dir / f"eve_memory_client-{package_version}-py3-none-any.whl").write_text(
+        "wheel",
+        encoding="utf-8",
+    )
     (bin_dir / "uv").write_text(
         "#!/usr/bin/env bash\n"
         "echo uv \"$@\" >> \"$EVE_TEST_COMMAND_LOG\"\n",
@@ -540,10 +690,16 @@ def test_release_workflow_publishes_from_client_repo_on_release_tag() -> None:
     assert 'data["project"]["name"] != "eve-memory-client"' in publish_job
     assert 'expected_ref = f"refs/tags/eve-memory-client@{version}"' in publish_job
     assert 'os.environ["GITHUB_REF"] != expected_ref' in publish_job
-    assert "bash scripts/publish-eve-client-pypi.sh --publish" in publish_job
+    assert "actions/download-artifact@v4" in publish_job
+    assert "name: eve-memory-client-python" in publish_job
+    assert "path: dist" in publish_job
+    assert (
+        "bash scripts/publish-eve-client-pypi.sh --publish --skip-build --dist-dir dist"
+        in publish_job
+    )
     assert "--dry-run" not in publish_job
     assert "id-token: write" in publish_job
-    assert "PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}" in publish_job
+    assert "PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}" not in publish_job
     assert "eve-memory-client-python" in workflow
     assert "eve-memory-client-binaries-${{ matrix.os }}" in workflow
     assert "release/eve-memory-client/artifacts/*" in workflow

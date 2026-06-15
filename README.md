@@ -30,16 +30,19 @@ Request access at [evemem.com](https://evemem.com). After provisioning, sign in 
 **2. Install the client**
 
 ```bash
-uv tool install git+https://github.com/evememory/eve-client.git
+uv tool install eve-memory-client
 ```
 
 No uv? Use:
 
 ```bash
-pipx install git+https://github.com/evememory/eve-client.git
+pipx install eve-memory-client
 ```
 
 Verify: `eve version`
+
+Security note: install the PyPI package named `eve-memory-client`. Do not
+install `eve-client`; that PyPI name is owned by a third party.
 
 **3. Connect Claude Code** (swap `--tool gemini-cli` for Gemini CLI)
 
@@ -85,18 +88,30 @@ Before installing the client, get an Eve workspace:
   - [https://evemem.com/app/overview](https://evemem.com/app/overview)
 - If you plan to use API-key auth, create or rotate a tenant key from the Eve admin/user setup flow before connecting your client.
 
-### From GitHub now
+### From PyPI
 
 Preferred:
 
 ```bash
-uv tool install git+https://github.com/evememory/eve-client.git
+uv tool install eve-memory-client
 ```
 
 Alternative:
 
 ```bash
-pipx install git+https://github.com/evememory/eve-client.git
+pipx install eve-memory-client
+```
+
+The PyPI distribution is `eve-memory-client`; `eve-client` is not used as the
+PyPI name because that namespace is occupied by a third party.
+Official PyPI page: [pypi.org/project/eve-memory-client](https://pypi.org/project/eve-memory-client/).
+
+### Development install from GitHub
+
+Use this only when testing unreleased client changes:
+
+```bash
+uv tool install git+https://github.com/evememory/eve-client.git
 ```
 
 Or via the standalone bash installer. Save it first; do not pipe remote shell directly into `sh`:
@@ -116,23 +131,6 @@ eve --help
 ### Manual config (no installer)
 
 See [`examples/`](./examples/) for ready-to-paste MCP config snippets for Claude Code, Gemini CLI, and Codex CLI.
-
-### From PyPI
-
-The PyPI distribution is `eve-memory-client`; `eve-client` is not used as the
-PyPI name because that namespace is occupied by a third party.
-
-Install with:
-
-```bash
-uv tool install eve-memory-client
-```
-
-or:
-
-```bash
-pipx install eve-memory-client
-```
 
 ## What Eve Client Does
 
