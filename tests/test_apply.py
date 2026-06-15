@@ -221,12 +221,12 @@ def test_apply_preserves_existing_active_claude_md_content(
     ):
         detected = detect_tools(only=["claude-code"])
         plan = build_install_plan(detected, _config(tmp_path))
-    apply_install_plan(
-        plan,
-        _config(tmp_path),
-        LocalCredentialStore(_config(tmp_path).state_dir),
-        provided_api_keys={"claude-code": "eve-secret"},
-    )
+        apply_install_plan(
+            plan,
+            _config(tmp_path),
+            LocalCredentialStore(_config(tmp_path).state_dir),
+            provided_api_keys={"claude-code": "eve-secret"},
+        )
     mcp_payload = json.loads(existing_mcp_config.read_text(encoding="utf-8"))
     assert mcp_payload["mcpServers"]["eve-memory"]["headers"]["X-API-Key"] == "eve-secret"
     hooks_payload = json.loads(existing_hooks_config.read_text(encoding="utf-8"))

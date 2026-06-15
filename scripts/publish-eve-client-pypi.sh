@@ -19,7 +19,9 @@ usage() {
 Usage: publish-eve-client-pypi.sh [--dry-run|--publish] [--skip-build] [--dist-dir DIR]
 
 Builds and validates eve-memory-client PyPI artifacts. --dry-run never uploads.
---publish uploads existing validated artifacts and requires PYPI_API_TOKEN.
+--publish uploads existing validated artifacts. In GitHub Actions it uses PyPI
+Trusted Publishing when PYPI_API_TOKEN is absent; outside GitHub Actions it
+requires PYPI_API_TOKEN.
 EOF
 }
 

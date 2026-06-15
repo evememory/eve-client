@@ -10,7 +10,7 @@ else
   PACKAGE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
   ROOT_DIR="$PACKAGE_DIR"
 fi
-OUT_DIR="${EVE_CLIENT_RELEASE_OUT_DIR:-$ROOT_DIR/release/eve-client}"
+OUT_DIR="${EVE_CLIENT_RELEASE_OUT_DIR:-$ROOT_DIR/release/eve-memory-client}"
 PYINSTALLER="${EVE_CLIENT_PYINSTALLER:-uv run --package eve-memory-client --python 3.11 --with pyinstaller pyinstaller}"
 
 VERSION="$(python3 - "$PACKAGE_DIR" <<'PY'
@@ -69,7 +69,7 @@ cp "$BIN_DIR"/eve-gemini-hook "$ARCHIVE_DIR/"
 
 (
   cd "$ARCHIVE_DIR"
-  tar -czf "eve-client-${VERSION}-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m).tar.gz" \
+  tar -czf "eve-memory-client-${VERSION}-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m).tar.gz" \
     README.md \
     eve \
     eve-claude-hook \

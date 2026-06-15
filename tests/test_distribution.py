@@ -535,8 +535,26 @@ def test_release_workflow_publishes_from_client_repo_on_release_tag() -> None:
     assert "TMPDIR=\"$RUNNER_TEMP/pytest-tmp\"" in workflow
 
     assert "if: startsWith(github.ref, 'refs/tags/eve-memory-client@')" in publish_job
+    assert "github.repository == 'evememory/eve-client'" in publish_job
+    assert "Verify release metadata" in publish_job
+    assert 'data["project"]["name"] != "eve-memory-client"' in publish_job
+    assert 'expected_ref = f"refs/tags/eve-memory-client@{version}"' in publish_job
+    assert 'os.environ["GITHUB_REF"] != expected_ref' in publish_job
     assert "bash scripts/publish-eve-client-pypi.sh --publish" in publish_job
     assert "--dry-run" not in publish_job
     assert "id-token: write" in publish_job
     assert "PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}" in publish_job
+    assert "eve-memory-client-python" in workflow
+    assert "eve-memory-client-binaries-${{ matrix.os }}" in workflow
+    assert "release/eve-memory-client/artifacts/*" in workflow
     assert "--token" not in publish_job
+
+
+def test_release_script_uses_eve_memory_client_artifact_names() -> None:
+    release_script = (PACKAGE_ROOT / "scripts" / "build-eve-client-release.sh").read_text(
+        encoding="utf-8"
+    )
+
+    assert "release/eve-memory-client" in release_script
+    assert "eve-memory-client-${VERSION}-" in release_script
+    assert "release/eve-client" not in release_script

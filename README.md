@@ -1,10 +1,10 @@
-# Eve MCP Client
+# Eve Memory Client
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python >= 3.11](https://img.shields.io/badge/python-%E2%89%A53.11-blue)](https://www.python.org/downloads/)
 [![MCP Compatible](https://img.shields.io/badge/MCP-compatible-brightgreen)](https://evemem.com)
 
-`eve-client` is the local installer and integration CLI for connecting supported AI tools to the hosted Eve memory service.
+`eve-memory-client` is the Python distribution for the local `eve` CLI. It connects supported AI tools to the hosted Eve memory service.
 
 It detects local tools, configures MCP, installs Eve-managed prompt and hook files where supported, manages auth, and can verify, repair, or remove the integration later. It can also import local history from supported clients.
 
@@ -117,13 +117,12 @@ eve --help
 
 See [`examples/`](./examples/) for ready-to-paste MCP config snippets for Claude Code, Gemini CLI, and Codex CLI.
 
-### From PyPI after package publish
+### From PyPI
 
-The publishable distribution is `eve-memory-client`; `eve-client` is not used
-as the PyPI name because that namespace is occupied by a third party. The next
-release version prepared from this branch is `0.3.0`.
+The PyPI distribution is `eve-memory-client`; `eve-client` is not used as the
+PyPI name because that namespace is occupied by a third party.
 
-Once published, install with:
+Install with:
 
 ```bash
 uv tool install eve-memory-client
@@ -455,4 +454,4 @@ example `eve-memory-client@0.3.0`.
 
 ## License
 
-Apache-2.0. See [LICENSE](/Users/kozman/Repos/github.com/sherifkozman/eve/packages/client/LICENSE).
+Apache-2.0. See [LICENSE](./LICENSE).

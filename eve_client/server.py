@@ -4,7 +4,7 @@ Proxies tool calls to the hosted Eve Memory service at mcp.evemem.com.
 Provides local tool discovery for Glama quality inspection and MCP clients
 that prefer stdio transport.
 
-Install:  pip install 'eve-client[server]'
+Install:  pip install 'eve-memory-client[server]'
 Run:      eve-mcp-server
 """
 
