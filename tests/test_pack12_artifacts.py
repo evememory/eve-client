@@ -328,6 +328,40 @@ def test_claude_code_plugin_public_client_0_3_3_partial_smoke_is_not_promoted() 
     assert "full plugin uninstall blocked" in rollback["stdout_preview"]
 
 
+def test_claude_code_host_capability_probe_blocks_contaminated_promotion() -> None:
+    artifact_path = (
+        MONOREPO_ROOT
+        / "docs"
+        / "specs"
+        / "artifacts"
+        / "pack12-claude-code-plugin-host-capability-probe-2026-06-17.json"
+    )
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+
+    assert artifact["pack"] == "PACK-12"
+    assert artifact["artifact"] == "claude-code-plugin-host-capability-probe"
+    assert artifact["channel"] == "claude-code-plugin"
+    assert artifact["promotion_ready"] is False
+    assert artifact["checks"]["claude_cli_present"] == "pass"
+    assert artifact["checks"]["claude_plugin_validate"] == "pass"
+    assert artifact["checks"]["existing_user_eve_mcp_detected"] == "pass"
+    assert artifact["checks"]["session_plugin_dir_import_isolated"] == "fail"
+    assert artifact["checks"]["functional_model_smoke"] == "fail"
+    assert artifact["checks"]["synthetic_memory_cleanup"] == "pass"
+    assert any(
+        "existing user-level MCP config" in observation
+        for observation in artifact["observations"]
+    )
+    assert any(
+        "credential header value is intentionally omitted" in command["result"]
+        for command in artifact["commands"]
+    )
+    assert any(
+        "cannot prove Pack 12 plugin install/import" in reason
+        for reason in artifact["not_promoted"]
+    )
+
+
 def test_pack12_client_release_boundary_artifact_is_not_promoted() -> None:
     artifact_path = (
         MONOREPO_ROOT

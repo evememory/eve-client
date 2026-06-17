@@ -92,11 +92,15 @@ def test_active_pack12_smoke_matrix_tracks_first_wave_and_openai_channels() -> N
     assert claude_code["partial_host_smoke_gate_artifact"] == (
         "docs/specs/artifacts/pack12-claude-code-plugin-host-smoke-gate-2026-06-17-public-client-0.3.3-v2.json"
     )
+    assert claude_code["host_capability_probe_artifact"] == (
+        "docs/specs/artifacts/pack12-claude-code-plugin-host-capability-probe-2026-06-17.json"
+    )
     assert claude_code["client_release_boundary_artifact"] == (
         "docs/specs/artifacts/pack12-client-release-boundary-2026-06-17.json"
     )
     assert "semantic MCP store/search/forget is proven" in claude_code["probe"]["observed"]
     assert "public-client host smoke now passes" in claude_code["probe"]["observed"]
+    assert "naive Claude run would be contaminated" in claude_code["probe"]["observed"]
     assert "still not promoted" in claude_code["probe"]["observed"]
     assert claude_code["checks"]["install_or_import"] == "pass"
     assert claude_code["checks"]["store"] == "blocked"
@@ -104,7 +108,8 @@ def test_active_pack12_smoke_matrix_tracks_first_wave_and_openai_channels() -> N
     assert claude_code["checks"]["forget"] == "blocked"
     assert claude_code["checks"]["connector_install_completed"] == "blocked"
     assert "0.3.3 clears" in claude_code["blocked_by"][0]
-    assert "authenticated Claude Code host session" in claude_code["blocked_by"][1]
+    assert "existing user-level Eve MCP server" in claude_code["blocked_by"][1]
+    assert "authenticated Claude Code host session" in claude_code["blocked_by"][2]
 
 
 def test_pack12_smoke_matrix_rejects_promoted_channel_without_full_smoke(
