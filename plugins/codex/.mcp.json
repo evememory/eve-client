@@ -1,5 +1,5 @@
 {
-  "mcp_servers": {
+  "mcpServers": {
     "eve-memory": {
       "url": "https://mcp.evemem.com/mcp"
     }

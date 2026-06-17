@@ -24,6 +24,19 @@ eve connect --tool claude-code --install-source claude-code-plugin
 eve verify --tool claude-code
 ```
 
+## Plugin Package
+
+This directory is the Claude Code plugin package. It includes:
+
+- `.claude-plugin/plugin.json`
+- `.claude-plugin/marketplace.json`
+- `.mcp.json`
+- Eve Memory skill instructions
+- Claude Code hook definitions
+
+The plugin package embeds no Eve API key, bearer token, password, or private
+credential.
+
 ## Runtime Path
 
 The plugin starts `eve-mcp-server`, which reads local Eve credentials and proxies tool calls to the hosted MCP endpoint:

@@ -23,10 +23,38 @@ def test_missing_pack12_artifact_tree_fails(tmp_path: Path) -> None:
     result = validate_artifact_tree(tmp_path)
 
     assert not result.ok
+    assert ".agents/plugins/marketplace.json" in result.errors
     assert "plugins/claude-code/.claude-plugin/plugin.json" in result.errors
 
 
 def test_minimal_pack12_artifact_tree_passes(tmp_path: Path) -> None:
+    (tmp_path / "CHANNELS.md").write_text(
+        "# Eve Memory Channel Status\n",
+        encoding="utf-8",
+    )
+    (tmp_path / ".agents/plugins").mkdir(parents=True)
+    (tmp_path / ".agents/plugins/marketplace.json").write_text(
+        json.dumps(
+            {
+                "name": "eve-memory-codex",
+                "plugins": [
+                    {
+                        "name": "eve-memory",
+                        "source": {
+                            "source": "local",
+                            "path": "./plugins/codex",
+                        },
+                        "policy": {
+                            "installation": "AVAILABLE",
+                            "authentication": "ON_INSTALL",
+                        },
+                        "category": "Productivity",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
     (tmp_path / "plugins/claude-code/.claude-plugin").mkdir(parents=True)
     (tmp_path / "plugins/claude-code/.claude-plugin/plugin.json").write_text(
         json.dumps(
@@ -91,6 +119,12 @@ def test_minimal_pack12_artifact_tree_passes(tmp_path: Path) -> None:
         "Remote MCP endpoint: https://mcp.evemem.com/mcp\n",
         encoding="utf-8",
     )
+    (tmp_path / "connectors/chatgpt").mkdir(parents=True)
+    (tmp_path / "connectors/chatgpt/README.md").write_text(
+        "# ChatGPT Connector\n\n"
+        "Remote MCP endpoint: https://mcp.evemem.com/mcp\n",
+        encoding="utf-8",
+    )
     (tmp_path / "plugins/codex/.codex-plugin").mkdir(parents=True)
     (tmp_path / "plugins/codex/.codex-plugin/plugin.json").write_text(
         json.dumps(
@@ -105,7 +139,7 @@ def test_minimal_pack12_artifact_tree_passes(tmp_path: Path) -> None:
     (tmp_path / "plugins/codex/.mcp.json").write_text(
         json.dumps(
             {
-                "mcp_servers": {
+                "mcpServers": {
                     "eve-memory": {"url": "https://mcp.evemem.com/mcp"}
                 }
             }
@@ -154,6 +188,20 @@ def test_minimal_pack12_artifact_tree_passes(tmp_path: Path) -> None:
 
     assert result.ok
     assert result.errors == []
+
+
+def test_public_channel_status_doc_lists_supported_surfaces() -> None:
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    channels = (REPO_ROOT / "CHANNELS.md").read_text(encoding="utf-8")
+
+    assert "CHANNELS.md" in readme
+    assert "Claude Code" in channels
+    assert "Codex" in channels
+    assert "ChatGPT" in channels
+    assert "Gemini CLI" in channels
+    assert "VS Code" in channels
+    assert "A channel is not promoted from package validation alone" in channels
+    assert "https://mcp.evemem.com/mcp" in channels
 
 
 def test_claude_code_plugin_artifacts_are_valid() -> None:
@@ -650,6 +698,18 @@ def test_claude_desktop_connector_readiness_doc_is_remote_mcp_first() -> None:
     assert "Do not submit to the Anthropic connector directory" in readme
 
 
+def test_chatgpt_connector_readiness_doc_is_remote_mcp_first() -> None:
+    readme = (REPO_ROOT / "connectors" / "chatgpt" / "README.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "https://mcp.evemem.com/mcp" in readme
+    assert "https://evemem.com/app/connect?install_source=chatgpt-app" in readme
+    assert "Developer-Mode Validation" in readme
+    assert "Do not submit for public listing" in readme
+    assert "No API key or token is embedded" in readme
+
+
 def test_claude_desktop_readiness_artifact_is_not_promoted() -> None:
     artifact_path = (
         MONOREPO_ROOT
@@ -766,6 +826,11 @@ def test_claude_desktop_host_capability_probe_is_not_promotion_evidence() -> Non
 
 
 def test_codex_plugin_artifacts_are_valid() -> None:
+    marketplace = json.loads(
+        (REPO_ROOT / ".agents" / "plugins" / "marketplace.json").read_text(
+            encoding="utf-8"
+        )
+    )
     plugin_root = REPO_ROOT / "plugins" / "codex"
     manifest = json.loads(
         (plugin_root / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8")
@@ -777,12 +842,25 @@ def test_codex_plugin_artifacts_are_valid() -> None:
     readme = (plugin_root / "README.md").read_text(encoding="utf-8")
 
     assert manifest["name"] == "eve-memory"
+    assert manifest["author"]["name"] == "Eve Memory"
     assert manifest["skills"] == "./skills/"
     assert manifest["mcpServers"] == "./.mcp.json"
     assert manifest["interface"]["displayName"] == "Eve Memory"
+    assert manifest["interface"]["category"] == "Productivity"
     assert "defaultPrompt" in manifest["interface"]
 
-    server = mcp_config["mcp_servers"]["eve-memory"]
+    assert marketplace["name"] == "eve-memory-codex"
+    assert marketplace["plugins"][0]["name"] == "eve-memory"
+    assert marketplace["plugins"][0]["source"] == {
+        "source": "local",
+        "path": "./plugins/codex",
+    }
+    assert marketplace["plugins"][0]["policy"] == {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL",
+    }
+
+    server = mcp_config["mcpServers"]["eve-memory"]
     assert server == {"url": "https://mcp.evemem.com/mcp"}
     assert "X-API-Key" not in json.dumps(mcp_config)
     assert "Authorization" not in json.dumps(mcp_config)
@@ -808,7 +886,15 @@ def test_codex_plugin_clean_profile_smoke_artifact_is_not_promoted() -> None:
     assert artifact["artifact"] == "clean-profile-plugin-package-smoke"
     assert artifact["ok"] is True
     assert artifact["promotion_ready"] is False
-    assert artifact["scope"] == "Local clean-profile package integrity only; not Codex plugin marketplace/install evidence and not store/read/forget smoke."
+    assert artifact["scope"] == (
+        "Local clean-profile package integrity only. Codex-native marketplace "
+        "install/remove evidence is recorded separately in "
+        "docs/specs/artifacts/pack12-channel-promotion-sandbox-sweep-2026-06-17.json. "
+        "This artifact is not store/read/forget smoke."
+    )
+    assert artifact["supplemental_sandbox_sweep_artifact"] == (
+        "docs/specs/artifacts/pack12-channel-promotion-sandbox-sweep-2026-06-17.json"
+    )
     assert artifact["checks"] == {
         "clean_environment": "pass",
         "plugin_manifest": "pass",
@@ -1063,8 +1149,13 @@ def test_gemini_cli_extension_package_artifact_is_not_promoted() -> None:
     assert artifact["ok"] is True
     assert artifact["promotion_ready"] is False
     assert artifact["scope"] == (
-        "Local Gemini CLI extension package integrity only; not gemini extensions "
-        "install evidence and not store/read/forget smoke."
+        "Local Gemini CLI extension package integrity only. Clean HOME gemini "
+        "extensions install/list/uninstall evidence is recorded separately in "
+        "docs/specs/artifacts/pack12-channel-promotion-sandbox-sweep-2026-06-17.json. "
+        "This artifact is not store/read/forget smoke."
+    )
+    assert artifact["supplemental_sandbox_sweep_artifact"] == (
+        "docs/specs/artifacts/pack12-channel-promotion-sandbox-sweep-2026-06-17.json"
     )
     assert artifact["checks"] == {
         "extension_manifest": "pass",
@@ -1075,12 +1166,50 @@ def test_gemini_cli_extension_package_artifact_is_not_promoted() -> None:
         "no_embedded_secrets": "pass",
     }
     assert set(artifact["remaining_before_promotion"]) == {
-        "gemini extensions install from release source or clean local package path",
-        "MCP connection/auth smoke from Gemini CLI using the extension",
+        "MCP connection/auth smoke from Gemini CLI using the installed extension",
         "MCP store/read/forget smoke from the connected Gemini CLI environment",
         "connector.install.completed and signup_source attribution proof",
         "rollback/uninstall proof with gemini extensions uninstall",
     }
+
+
+def test_channel_promotion_sandbox_sweep_is_not_promoted() -> None:
+    artifact_path = (
+        MONOREPO_ROOT
+        / "docs"
+        / "specs"
+        / "artifacts"
+        / "pack12-channel-promotion-sandbox-sweep-2026-06-17.json"
+    )
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+
+    assert artifact["pack"] == "PACK-12"
+    assert artifact["artifact"] == "channel-promotion-sandbox-sweep"
+    assert artifact["status"] == "package_setup_ready_not_promoted"
+    assert artifact["promotion_ready"] is False
+    channels = {channel["id"]: channel for channel in artifact["channels"]}
+
+    assert channels["codex-plugin"]["checks"][
+        "clean_codex_home_plugin_install"
+    ] == "pass"
+    assert channels["codex-plugin"]["checks"][
+        "authenticated_store_read_forget"
+    ] == "not_run"
+    assert channels["gemini-cli-extension"]["checks"][
+        "gemini_extension_install_clean_home"
+    ] == "pass"
+    assert channels["gemini-cli-extension"]["checks"][
+        "authenticated_store_read_forget"
+    ] == "not_run"
+    assert channels["vscode"]["checks"]["clean_user_data_add_mcp"] == "pass"
+    assert channels["vscode"]["checks"][
+        "authenticated_store_read_forget"
+    ] == "not_run"
+    assert channels["cursor"]["status"] == "blocked_client_missing"
+    assert channels["windsurf"]["status"] == "blocked_client_missing"
+    assert channels["claude-desktop"]["status"] == "blocked_external_host_flow"
+    assert channels["chatgpt-app"]["status"] == "blocked_external_host_flow"
+    assert "No additional channel is promoted" in artifact["decision"]
 
 
 def test_third_wave_mcp_ide_provider_artifact_is_not_promoted() -> None:

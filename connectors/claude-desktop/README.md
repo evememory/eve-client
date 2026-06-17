@@ -32,6 +32,20 @@ Do not submit to the Anthropic connector directory unless all of these pass:
 - clean store/read/forget smoke
 - allowed-links review if the connector opens links
 
+## Submission Copy
+
+Suggested short description:
+
+```text
+Eve Memory gives Claude a durable, user-owned memory layer across sessions and tools through a hosted MCP connector.
+```
+
+Suggested long description:
+
+```text
+Eve Memory is a managed memory service for AI agents. The Claude connector lets users store, search, and forget durable project context, preferences, and decisions through Eve's hosted MCP endpoint. Eve does not embed secrets in the connector package; users authenticate through Eve's approved hosted auth flow.
+```
+
 ## MCPB Fallback
 
 Build an MCPB desktop extension only if remote MCP cannot satisfy the first-wave release path or an enterprise desktop distribution path requires a local bundle.

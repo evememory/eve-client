@@ -79,6 +79,9 @@ Claude will recall it via Eve. ✓
 
 See [`examples/`](./examples/) for manual MCP config snippets (no installer needed).
 
+For distribution-channel status across Claude, Codex, ChatGPT, Gemini, Cursor,
+VS Code, and Windsurf, see [`CHANNELS.md`](./CHANNELS.md).
+
 ## Install
 
 Before installing the client, get an Eve workspace:
@@ -236,6 +239,17 @@ Important:
 ### Claude Desktop
 
 Not auto-configured locally for hosted Eve.
+
+For the hosted remote MCP connector path, see
+[`connectors/claude-desktop/`](./connectors/claude-desktop/).
+
+### ChatGPT
+
+ChatGPT uses Eve's hosted MCP endpoint through a custom MCP app or connector
+flow. It is not installed by the local CLI.
+
+For validation and submission notes, see
+[`connectors/chatgpt/`](./connectors/chatgpt/).
 
 ## Authentication Requirements
 

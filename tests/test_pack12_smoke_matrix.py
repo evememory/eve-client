@@ -47,18 +47,13 @@ def test_active_pack12_smoke_matrix_tracks_first_wave_and_openai_channels() -> N
     for channel_id, expected_source in REQUIRED_CHANNELS.items():
         channel = channels[channel_id]
         assert channel["install_source"] == expected_source
-        assert channel["promotion_ready"] is False
         assert set(channel["checks"]) == set(REQUIRED_SMOKE_CHECKS)
         if channel_id == "claude-code-plugin":
-            assert all(
-                status in {"pass", "blocked"} for status in channel["checks"].values()
-            )
-            assert channel["checks"]["clean_environment"] == "pass"
-            assert channel["checks"]["entry_url"] == "pass"
-            assert channel["checks"]["install_or_import"] == "pass"
-            assert channel["checks"]["install_source_flow"] == "pass"
-            assert channel["checks"]["rollback_or_uninstall"] == "blocked"
+            assert channel["promotion_ready"] is True
+            assert channel["proof_scope"] == "actual_host_smoke"
+            assert all(status == "pass" for status in channel["checks"].values())
         elif channel_id == "claude-desktop":
+            assert channel["promotion_ready"] is False
             assert all(
                 status in {"pass", "blocked"} for status in channel["checks"].values()
             )
@@ -68,6 +63,7 @@ def test_active_pack12_smoke_matrix_tracks_first_wave_and_openai_channels() -> N
             assert channel["checks"]["install_source_flow"] == "blocked"
             assert channel["checks"]["rollback_or_uninstall"] == "blocked"
         elif channel_id == "codex-plugin":
+            assert channel["promotion_ready"] is False
             assert all(
                 status in {"pass", "blocked"} for status in channel["checks"].values()
             )
@@ -77,6 +73,7 @@ def test_active_pack12_smoke_matrix_tracks_first_wave_and_openai_channels() -> N
             assert channel["checks"]["install_source_flow"] == "blocked"
             assert channel["checks"]["rollback_or_uninstall"] == "blocked"
         elif channel_id == "chatgpt-app":
+            assert channel["promotion_ready"] is False
             assert all(
                 status in {"pass", "blocked"} for status in channel["checks"].values()
             )
@@ -86,6 +83,7 @@ def test_active_pack12_smoke_matrix_tracks_first_wave_and_openai_channels() -> N
             assert channel["checks"]["install_source_flow"] == "blocked"
             assert channel["checks"]["rollback_or_uninstall"] == "blocked"
         else:
+            assert channel["promotion_ready"] is False
             assert all(status == "not_run" for status in channel["checks"].values())
 
     production_probe = json.loads(
@@ -130,18 +128,24 @@ def test_active_pack12_smoke_matrix_tracks_first_wave_and_openai_channels() -> N
     assert claude_code["client_release_boundary_artifact"] == (
         "docs/specs/artifacts/pack12-client-release-boundary-2026-06-17.json"
     )
-    assert "semantic MCP store/search/forget is proven" in claude_code["probe"]["observed"]
-    assert "public-client host smoke now passes" in claude_code["probe"]["observed"]
-    assert "naive Claude run would be contaminated" in claude_code["probe"]["observed"]
-    assert "still not promoted" in claude_code["probe"]["observed"]
+    assert claude_code["connector_install_event_live_probe_postdeploy_artifact"] == (
+        "docs/specs/artifacts/pack12-connector-install-event-live-probe-postdeploy-2026-06-17.json"
+    )
+    assert claude_code["smoke_evidence_artifact"] == (
+        "docs/specs/artifacts/pack12-claude-code-plugin-host-smoke-2026-06-17-promotion.json"
+    )
+    assert claude_code["smoke_gate_summary_artifact"] == (
+        "docs/specs/artifacts/pack12-claude-code-plugin-host-smoke-gate-2026-06-17-promotion.json"
+    )
+    assert "Runner-produced actual-host channel smoke passed" in claude_code["probe"]["observed"]
+    assert "synthetic smoke memory was forgotten" in claude_code["probe"]["observed"]
     assert claude_code["checks"]["install_or_import"] == "pass"
-    assert claude_code["checks"]["store"] == "blocked"
-    assert claude_code["checks"]["read"] == "blocked"
-    assert claude_code["checks"]["forget"] == "blocked"
-    assert claude_code["checks"]["connector_install_completed"] == "blocked"
-    assert "0.3.3 clears" in claude_code["blocked_by"][0]
-    assert "existing user-level Eve MCP server" in claude_code["blocked_by"][1]
-    assert "authenticated Claude Code host session" in claude_code["blocked_by"][2]
+    assert claude_code["checks"]["store"] == "pass"
+    assert claude_code["checks"]["read"] == "pass"
+    assert claude_code["checks"]["forget"] == "pass"
+    assert claude_code["checks"]["connector_install_completed"] == "pass"
+    assert claude_code["blocked_by"] == []
+    assert "Claude Code plugin row is promoted" in claude_code["promotion_summary"]
 
     claude_desktop = channels["claude-desktop"]
     assert claude_desktop["remote_mcp_auth_probe_artifact"] == (
@@ -164,8 +168,12 @@ def test_active_pack12_smoke_matrix_tracks_first_wave_and_openai_channels() -> N
     )
     assert "direct eve-memory MCP" in codex["probe"]["observed"]
     assert "package integrity is proven" in codex["blocked_by"][0]
-    assert "direct eve-memory MCP server" in codex["blocked_by"][1]
-    assert "clean Codex profile" in codex["blocked_by"][2]
+    assert codex["sandbox_sweep_artifact"] == (
+        "docs/specs/artifacts/pack12-channel-promotion-sandbox-sweep-2026-06-17.json"
+    )
+    assert "Codex-native marketplace shape" in codex["blocked_by"][1]
+    assert "direct eve-memory MCP server" in codex["blocked_by"][2]
+    assert "clean Codex profile" in codex["blocked_by"][3]
 
     chatgpt = channels["chatgpt-app"]
     assert chatgpt["host_capability_probe_artifact"] == (

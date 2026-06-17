@@ -5,6 +5,8 @@ from pathlib import Path
 
 
 REQUIRED_FILES = (
+    "CHANNELS.md",
+    ".agents/plugins/marketplace.json",
     "plugins/claude-code/.claude-plugin/plugin.json",
     "plugins/claude-code/.claude-plugin/marketplace.json",
     "plugins/claude-code/.mcp.json",
@@ -12,6 +14,7 @@ REQUIRED_FILES = (
     "plugins/claude-code/skills/eve-memory/SKILL.md",
     "plugins/claude-code/README.md",
     "connectors/claude-desktop/README.md",
+    "connectors/chatgpt/README.md",
     "plugins/codex/.codex-plugin/plugin.json",
     "plugins/codex/.mcp.json",
     "plugins/codex/skills/eve-memory/SKILL.md",
