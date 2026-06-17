@@ -38,6 +38,22 @@ def test_minimal_pack12_artifact_tree_passes(tmp_path: Path) -> None:
         ),
         encoding="utf-8",
     )
+    (tmp_path / "plugins/claude-code/.claude-plugin/marketplace.json").write_text(
+        json.dumps(
+            {
+                "name": "eve-memory",
+                "owner": {"name": "Eve Memory"},
+                "plugins": [
+                    {
+                        "name": "eve-memory",
+                        "source": "./",
+                        "description": "Eve Memory for Claude Code",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
     (tmp_path / "plugins/claude-code/.mcp.json").write_text(
         json.dumps(
             {
@@ -145,6 +161,11 @@ def test_claude_code_plugin_artifacts_are_valid() -> None:
     manifest = json.loads(
         (plugin_root / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8")
     )
+    marketplace = json.loads(
+        (plugin_root / ".claude-plugin" / "marketplace.json").read_text(
+            encoding="utf-8"
+        )
+    )
     mcp_config = json.loads((plugin_root / ".mcp.json").read_text(encoding="utf-8"))
     hooks = json.loads((plugin_root / "hooks" / "hooks.json").read_text(encoding="utf-8"))
     skill = (plugin_root / "skills" / "eve-memory" / "SKILL.md").read_text(
@@ -157,6 +178,10 @@ def test_claude_code_plugin_artifacts_are_valid() -> None:
     assert manifest["skills"] == "./skills/"
     assert manifest["mcpServers"] == "./.mcp.json"
     assert "hooks" not in manifest
+    assert marketplace["name"] == "eve-memory"
+    assert marketplace["plugins"][0]["name"] == "eve-memory"
+    assert marketplace["plugins"][0]["source"] == "./"
+    assert marketplace["plugins"][0]["category"] == "productivity"
 
     server = mcp_config["mcpServers"]["eve-memory"]
     assert server == {
@@ -195,23 +220,37 @@ def test_claude_code_plugin_clean_profile_smoke_artifact_is_not_promoted() -> No
     assert artifact["artifact"] == "clean-profile-plugin-package-smoke"
     assert artifact["ok"] is True
     assert artifact["promotion_ready"] is False
-    assert artifact["scope"] == "Local clean-profile package integrity only; not Claude Code marketplace install evidence and not store/read/forget smoke."
+    assert artifact["scope"] == (
+        "Local clean-profile package and marketplace install/enable/uninstall "
+        "integrity only; not authenticated Claude Code action evidence and not "
+        "store/read/forget smoke."
+    )
     assert artifact["checks"] == {
         "clean_environment": "pass",
+        "marketplace_manifest": "pass",
         "plugin_manifest": "pass",
         "referenced_files_exist": "pass",
         "mcp_config": "pass",
         "hooks": "pass",
         "skill": "pass",
         "readme": "pass",
+        "claude_plugin_validate_strict": "pass",
+        "local_marketplace_add": "pass",
+        "plugin_install": "pass",
+        "plugin_enable": "pass",
+        "plugin_details": "pass",
+        "plugin_uninstall": "pass",
         "no_embedded_secrets": "pass",
     }
+    assert artifact["observed"]["installed_plugin_id"] == "eve-memory@eve-memory"
+    assert artifact["observed"]["installed_plugin_enabled_after_enable"] is True
+    assert artifact["observed"]["uninstall_left_installed_plugin_list_empty"] is True
     assert set(artifact["remaining_before_promotion"]) == {
-        "Claude Code plugin install through the actual Claude Code plugin mechanism",
-        "eve connect --tool claude-code --install-source claude-code-plugin against production",
+        "Authenticated Claude Code session launched from a clean profile with the installed and enabled Eve Memory plugin",
+        "eve connect --tool claude-code --install-source claude-code-plugin against production from that clean profile",
         "MCP store/read/forget smoke from the connected Claude Code environment",
         "connector.install.completed and signup_source attribution proof",
-        "rollback/uninstall proof from a clean profile",
+        "rollback/uninstall proof after the authenticated action smoke",
     }
 
 

@@ -6,6 +6,7 @@ from pathlib import Path
 
 REQUIRED_FILES = (
     "plugins/claude-code/.claude-plugin/plugin.json",
+    "plugins/claude-code/.claude-plugin/marketplace.json",
     "plugins/claude-code/.mcp.json",
     "plugins/claude-code/hooks/hooks.json",
     "plugins/claude-code/skills/eve-memory/SKILL.md",

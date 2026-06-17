@@ -47,16 +47,17 @@
       "timeout_seconds": 120
     },
     "install_or_import": {
-      "purpose": "Install the Eve Memory Claude Code plugin through the actual Claude Code plugin mechanism or approved repo-distributed plugin path.",
+      "purpose": "Install and enable the Eve Memory Claude Code plugin through the actual Claude Code plugin mechanism or approved repo-distributed plugin path.",
       "command_template": [
         "operator-run",
-        "Install the plugin in the clean Claude Code profile and confirm Claude Code lists/loads eve-memory from the installed plugin location."
+        "Install and enable the plugin in the clean Claude Code profile and confirm Claude Code lists/loads eve-memory@eve-memory from the installed plugin location."
       ],
       "required_env": [
         "EVE_PACK12_CLEAN_HOME"
       ],
       "must_contain": [
-        "eve-memory"
+        "eve-memory@eve-memory",
+        "\"enabled\": true"
       ],
       "timeout_seconds": 300
     },
