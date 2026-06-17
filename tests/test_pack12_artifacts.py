@@ -679,6 +679,53 @@ def test_claude_desktop_remote_mcp_auth_probe_artifact_is_not_promoted() -> None
     ]
 
 
+def test_claude_desktop_host_capability_probe_is_not_promotion_evidence() -> None:
+    artifact_path = (
+        MONOREPO_ROOT
+        / "docs"
+        / "specs"
+        / "artifacts"
+        / "pack12-claude-desktop-host-capability-probe-2026-06-17.json"
+    )
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+
+    assert artifact["pack"] == "PACK-12"
+    assert artifact["channel"] == "claude-desktop"
+    assert artifact["artifact"] == "claude-desktop-host-capability-probe"
+    assert artifact["ok"] is True
+    assert artifact["promotion_ready"] is False
+    assert artifact["submission_ready"] is False
+    assert artifact["checks"] == {
+        "claude_desktop_app_present": "pass",
+        "config_parseable": "pass",
+        "no_existing_eve_mcp_server": "pass",
+        "no_existing_eve_extension": "pass",
+        "production_entrypoint": "pass",
+        "remote_mcp_auth_boundary": "pass",
+        "connector_import": "blocked",
+        "oauth_account_selection": "blocked",
+        "store_read_forget": "blocked",
+        "connector_install_completed": "blocked",
+        "rollback_or_uninstall": "blocked",
+    }
+    assert any(
+        "no existing Eve MCP server" in observation
+        for observation in artifact["observations"]
+    )
+    assert any(
+        "connector import" in reason.lower()
+        for reason in artifact["not_promoted"]
+    )
+    assert artifact["remaining_before_promotion"] == [
+        "Claude Desktop or claude.ai connector import must complete against the hosted MCP endpoint.",
+        "OAuth/account-selection flow must produce a valid bearer token with the expected audience.",
+        "store/read/forget smoke must pass from the connected Claude environment.",
+        "install_source=claude-desktop attribution must be observed.",
+        "connector.install.completed telemetry must be observed.",
+        "disconnect/rollback proof must exist.",
+    ]
+
+
 def test_codex_plugin_artifacts_are_valid() -> None:
     plugin_root = REPO_ROOT / "plugins" / "codex"
     manifest = json.loads(

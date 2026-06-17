@@ -58,6 +58,15 @@ def test_active_pack12_smoke_matrix_tracks_first_wave_and_openai_channels() -> N
             assert channel["checks"]["install_or_import"] == "pass"
             assert channel["checks"]["install_source_flow"] == "pass"
             assert channel["checks"]["rollback_or_uninstall"] == "blocked"
+        elif channel_id == "claude-desktop":
+            assert all(
+                status in {"pass", "blocked"} for status in channel["checks"].values()
+            )
+            assert channel["checks"]["clean_environment"] == "pass"
+            assert channel["checks"]["entry_url"] == "pass"
+            assert channel["checks"]["install_or_import"] == "blocked"
+            assert channel["checks"]["install_source_flow"] == "blocked"
+            assert channel["checks"]["rollback_or_uninstall"] == "blocked"
         else:
             assert all(status == "not_run" for status in channel["checks"].values())
 
@@ -78,7 +87,7 @@ def test_active_pack12_smoke_matrix_tracks_first_wave_and_openai_channels() -> N
         assert channel["production_entrypoint_probe_artifact"] == (
             "docs/specs/artifacts/pack12-production-entrypoint-probe-2026-06-17.json"
         )
-        if channel_id != "claude-code-plugin":
+        if channel_id not in {"claude-code-plugin", "claude-desktop"}:
             assert channel["checks"]["entry_url"] == "not_run"
             assert not channel.get("blocked_by")
 
@@ -110,6 +119,18 @@ def test_active_pack12_smoke_matrix_tracks_first_wave_and_openai_channels() -> N
     assert "0.3.3 clears" in claude_code["blocked_by"][0]
     assert "existing user-level Eve MCP server" in claude_code["blocked_by"][1]
     assert "authenticated Claude Code host session" in claude_code["blocked_by"][2]
+
+    claude_desktop = channels["claude-desktop"]
+    assert claude_desktop["remote_mcp_auth_probe_artifact"] == (
+        "docs/specs/artifacts/pack12-claude-desktop-remote-mcp-auth-probe-2026-06-17.json"
+    )
+    assert claude_desktop["host_capability_probe_artifact"] == (
+        "docs/specs/artifacts/pack12-claude-desktop-host-capability-probe-2026-06-17.json"
+    )
+    assert "Claude Desktop app is installed" in claude_desktop["probe"]["observed"]
+    assert "no existing Eve MCP server" in claude_desktop["blocked_by"][0]
+    assert "hosted MCP/auth boundary" in claude_desktop["blocked_by"][1]
+    assert "connector import" in claude_desktop["blocked_by"][2]
 
 
 def test_pack12_smoke_matrix_rejects_promoted_channel_without_full_smoke(
