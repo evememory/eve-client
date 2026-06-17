@@ -309,6 +309,54 @@ def test_connect_oauth_opens_browser_for_claude_desktop(tmp_path: Path, monkeypa
     open_browser.assert_called_once()
 
 
+def test_auth_login_oauth_includes_install_source_in_hosted_connect_url(
+    tmp_path: Path, monkeypatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    root = tmp_path.resolve()
+    with (
+        patch(
+            "eve_client.cli.resolve_config",
+            return_value=_resolved_config(root, feature_claude_desktop=True),
+        ),
+        patch("eve_client.cli._open_browser", return_value=False),
+        patch("eve_client.detect.base._home", return_value=root),
+        patch("eve_client.detect.base.platform.system", return_value="Darwin"),
+        patch("eve_client.detect.base.shutil.which", return_value=None),
+    ):
+        result = runner.invoke(
+            app,
+            [
+                "auth",
+                "login",
+                "--tool",
+                "claude-desktop",
+                "--auth-mode",
+                "oauth",
+                "--install-source",
+                "claude-desktop",
+                "--no-browser",
+            ],
+        )
+    assert result.exit_code == 0
+    assert "https://evemem.com/app/connect?tool=claude-desktop&install_source=claude-desktop" in result.output
+
+
+def test_config_set_install_source_writes_allowlisted_source(
+    tmp_path: Path, monkeypatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("eve_client.config.platform.system", lambda: "Linux")
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / ".cfg"))
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / ".state"))
+
+    result = runner.invoke(app, ["config", "set-install-source", "claude-code-plugin"])
+
+    assert result.exit_code == 0
+    config_path = tmp_path / ".cfg" / "eve" / "config.json"
+    assert json.loads(config_path.read_text(encoding="utf-8"))["install_source"] == "claude-code-plugin"
+
+
 def test_run_codex_injects_bearer_token(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr("eve_client.config.platform.system", lambda: "Linux")

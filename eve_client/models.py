@@ -6,7 +6,15 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Literal
 
-ToolName = Literal["claude-code", "claude-desktop", "gemini-cli", "codex-cli"]
+ToolName = Literal[
+    "claude-code",
+    "claude-desktop",
+    "gemini-cli",
+    "codex-cli",
+    "cursor",
+    "vscode",
+    "windsurf",
+]
 FeatureGateName = Literal["claude-desktop"]
 ConfigFormat = Literal["json", "toml", "markdown", "text"]
 PromptScope = Literal["global", "project"]

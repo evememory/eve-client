@@ -79,6 +79,9 @@ Claude will recall it via Eve. ✓
 
 See [`examples/`](./examples/) for manual MCP config snippets (no installer needed).
 
+For distribution-channel status across Claude, Codex, ChatGPT, Gemini, Cursor,
+VS Code, and Windsurf, see [`CHANNELS.md`](./CHANNELS.md).
+
 ## Install
 
 Before installing the client, get an Eve workspace:
@@ -236,6 +239,17 @@ Important:
 ### Claude Desktop
 
 Not auto-configured locally for hosted Eve.
+
+For the hosted remote MCP connector path, see
+[`connectors/claude-desktop/`](./connectors/claude-desktop/).
+
+### ChatGPT
+
+ChatGPT uses Eve's hosted MCP endpoint through a custom MCP app or connector
+flow. It is not installed by the local CLI.
+
+For validation and submission notes, see
+[`connectors/chatgpt/`](./connectors/chatgpt/).
 
 ## Authentication Requirements
 
@@ -435,6 +449,8 @@ Build Python artifacts:
 uv build .
 ```
 
+The next release version prepared from this branch is `0.3.3`.
+
 Check build artifacts:
 
 ```bash
@@ -448,7 +464,7 @@ bash scripts/build-eve-client-release.sh
 ```
 
 Release tags for the PyPI distribution use `eve-memory-client@<version>`, for
-example `eve-memory-client@0.3.0`.
+example `eve-memory-client@0.3.3`.
 
 ## License
 

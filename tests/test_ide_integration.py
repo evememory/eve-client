@@ -15,7 +15,10 @@ import pytest
 from eve_client.detect.base import detect_tools
 from eve_client.integrations.claude_code import ClaudeCodeProvider
 from eve_client.integrations.codex_cli import CodexCliProvider
+from eve_client.integrations.cursor import CursorProvider
 from eve_client.integrations.gemini_cli import GeminiCliProvider
+from eve_client.integrations.vscode import VSCodeProvider
+from eve_client.integrations.windsurf import WindsurfProvider
 from eve_client.merge import (
     build_mcp_json_entry,
     companion_content,
@@ -189,6 +192,64 @@ class TestConfigPlacement:
         parsed = tomllib.loads(second)
         assert parsed["mcp_servers"]["eve-memory"]["http_headers"]["X-API-Key"] == "key2"
         assert second.count('[mcp_servers."eve-memory"]') == 1
+
+    # --- Third-wave MCP IDEs ---
+
+    def test_cursor_config_path(self, tmp_path: Path) -> None:
+        with patch("eve_client.detect.base._home", return_value=tmp_path):
+            tools = detect_tools(only=["cursor"])
+        assert tools[0].config_path == tmp_path / ".cursor" / "mcp.json"
+        assert tools[0].config_format == "json"
+        assert tools[0].supports_hooks is False
+
+    def test_vscode_workspace_config_path(self, tmp_path: Path, monkeypatch) -> None:
+        monkeypatch.chdir(tmp_path)
+        with patch("eve_client.detect.base._home", return_value=tmp_path):
+            tools = detect_tools(only=["vscode"])
+        assert tools[0].config_path == tmp_path / ".vscode" / "mcp.json"
+        assert tools[0].config_format == "json"
+        assert tools[0].supports_hooks is False
+
+    def test_windsurf_config_path(self, tmp_path: Path) -> None:
+        with patch("eve_client.detect.base._home", return_value=tmp_path):
+            tools = detect_tools(only=["windsurf"])
+        assert (
+            tools[0].config_path
+            == tmp_path / ".codeium" / "windsurf" / "mcp_config.json"
+        )
+        assert tools[0].config_format == "json"
+        assert tools[0].supports_hooks is False
+
+    def test_cursor_json_entry_uses_mcp_servers(self, tmp_path: Path) -> None:
+        config = tmp_path / ".cursor" / "mcp.json"
+        merged = merge_json_config(config, "cursor", "https://mcp.evemem.com/mcp", "key")
+        parsed = json.loads(merged)
+        eve = parsed["mcpServers"]["eve-memory"]
+        assert eve["type"] == "http"
+        assert eve["url"] == "https://mcp.evemem.com/mcp"
+        assert eve["headers"]["X-API-Key"] == "key"
+        assert eve["headers"]["X-Source-Agent"] == "cursor"
+
+    def test_vscode_json_entry_uses_servers(self, tmp_path: Path) -> None:
+        config = tmp_path / ".vscode" / "mcp.json"
+        merged = merge_json_config(config, "vscode", "https://mcp.evemem.com/mcp", "key")
+        parsed = json.loads(merged)
+        assert "mcpServers" not in parsed
+        eve = parsed["servers"]["eve-memory"]
+        assert eve["type"] == "http"
+        assert eve["url"] == "https://mcp.evemem.com/mcp"
+        assert eve["headers"]["X-API-Key"] == "key"
+        assert eve["headers"]["X-Source-Agent"] == "vscode"
+
+    def test_windsurf_json_entry_uses_mcp_servers(self, tmp_path: Path) -> None:
+        config = tmp_path / ".codeium" / "windsurf" / "mcp_config.json"
+        merged = merge_json_config(config, "windsurf", "https://mcp.evemem.com/mcp", "key")
+        parsed = json.loads(merged)
+        eve = parsed["mcpServers"]["eve-memory"]
+        assert eve["type"] == "http"
+        assert eve["url"] == "https://mcp.evemem.com/mcp"
+        assert eve["headers"]["X-API-Key"] == "key"
+        assert eve["headers"]["X-Source-Agent"] == "windsurf"
 
 
 # ---------------------------------------------------------------------------
@@ -509,6 +570,64 @@ class TestCompanionPlacement:
         plan = CodexCliProvider().build_plan(detected, "https://mcp.evemem.com")
         hook_actions = [a for a in plan.actions if a.action_type == "write_hooks_config"]
         assert hook_actions == []
+
+    # --- Third-wave MCP IDEs ---
+
+    def test_cursor_provider_writes_config_and_auth_only(self, tmp_path: Path) -> None:
+        detected = DetectedTool(
+            name="cursor",
+            config_path=tmp_path / ".cursor" / "mcp.json",
+            config_format="json",
+            supports_hooks=False,
+            binary_found=True,
+            config_exists=False,
+        )
+        plan = CursorProvider().build_plan(detected, "https://mcp.evemem.com/mcp")
+        assert plan.supported is True
+        assert [action.action_type for action in plan.actions] == [
+            "write_config",
+            "auth_setup",
+        ]
+        assert plan.actions[0].scope == "global-config"
+        assert plan.actions[0].details["config_format"] == "json"
+
+    def test_vscode_provider_writes_workspace_config_and_auth_only(
+        self, tmp_path: Path
+    ) -> None:
+        detected = DetectedTool(
+            name="vscode",
+            config_path=tmp_path / ".vscode" / "mcp.json",
+            config_format="json",
+            supports_hooks=False,
+            binary_found=True,
+            config_exists=False,
+        )
+        plan = VSCodeProvider().build_plan(detected, "https://mcp.evemem.com/mcp")
+        assert plan.supported is True
+        assert [action.action_type for action in plan.actions] == [
+            "write_config",
+            "auth_setup",
+        ]
+        assert plan.actions[0].scope == "project"
+        assert plan.actions[0].details["config_format"] == "json"
+
+    def test_windsurf_provider_writes_config_and_auth_only(self, tmp_path: Path) -> None:
+        detected = DetectedTool(
+            name="windsurf",
+            config_path=tmp_path / ".codeium" / "windsurf" / "mcp_config.json",
+            config_format="json",
+            supports_hooks=False,
+            binary_found=True,
+            config_exists=False,
+        )
+        plan = WindsurfProvider().build_plan(detected, "https://mcp.evemem.com/mcp")
+        assert plan.supported is True
+        assert [action.action_type for action in plan.actions] == [
+            "write_config",
+            "auth_setup",
+        ]
+        assert plan.actions[0].scope == "global-config"
+        assert plan.actions[0].details["config_format"] == "json"
 
 
 # ---------------------------------------------------------------------------

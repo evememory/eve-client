@@ -1,0 +1,21 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "eve-memory",
+  "description": "Eve Memory plugin marketplace for Claude Code.",
+  "owner": {
+    "name": "Eve Memory"
+  },
+  "plugins": [
+    {
+      "name": "eve-memory",
+      "description": "Persistent memory for Claude Code using Eve's hosted MCP service.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Eve Memory"
+      },
+      "source": "./",
+      "category": "productivity",
+      "homepage": "https://evemem.com"
+    }
+  ]
+}

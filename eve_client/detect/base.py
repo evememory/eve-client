@@ -8,7 +8,15 @@ from pathlib import Path
 
 from eve_client.models import DetectedTool, ToolName
 
-ALL_TOOLS: list[ToolName] = ["claude-code", "claude-desktop", "gemini-cli", "codex-cli"]
+ALL_TOOLS: list[ToolName] = [
+    "claude-code",
+    "claude-desktop",
+    "gemini-cli",
+    "codex-cli",
+    "cursor",
+    "vscode",
+    "windsurf",
+]
 
 
 def _home() -> Path:
@@ -79,6 +87,46 @@ def _detect_codex_cli() -> DetectedTool:
     )
 
 
+def _detect_cursor() -> DetectedTool:
+    binary = shutil.which("cursor")
+    config_path = _home() / ".cursor" / "mcp.json"
+    return DetectedTool(
+        name="cursor",
+        config_path=config_path,
+        config_format="json",
+        supports_hooks=False,
+        binary_found=binary is not None,
+        config_exists=config_path.exists(),
+    )
+
+
+def _detect_vscode() -> DetectedTool:
+    binary = shutil.which("code")
+    config_path = Path.cwd() / ".vscode" / "mcp.json"
+    return DetectedTool(
+        name="vscode",
+        config_path=config_path,
+        config_format="json",
+        supports_hooks=False,
+        binary_found=binary is not None,
+        config_exists=config_path.exists(),
+        project_scoped=True,
+    )
+
+
+def _detect_windsurf() -> DetectedTool:
+    binary = shutil.which("windsurf")
+    config_path = _home() / ".codeium" / "windsurf" / "mcp_config.json"
+    return DetectedTool(
+        name="windsurf",
+        config_path=config_path,
+        config_format="json",
+        supports_hooks=False,
+        binary_found=binary is not None,
+        config_exists=config_path.exists(),
+    )
+
+
 def detect_tools(
     only: list[ToolName] | None = None,
     project_scoped: bool = False,
@@ -95,4 +143,10 @@ def detect_tools(
             detected.append(_detect_gemini_cli())
         elif tool == "codex-cli":
             detected.append(_detect_codex_cli())
+        elif tool == "cursor":
+            detected.append(_detect_cursor())
+        elif tool == "vscode":
+            detected.append(_detect_vscode())
+        elif tool == "windsurf":
+            detected.append(_detect_windsurf())
     return detected

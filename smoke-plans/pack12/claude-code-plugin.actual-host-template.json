@@ -1,0 +1,170 @@
+{
+  "pack": "PACK-12",
+  "artifact": "channel-smoke-plan-template",
+  "schema_version": 1,
+  "channel": "claude-code-plugin",
+  "install_source": "claude-code-plugin",
+  "proof_scope": "actual_host_smoke",
+  "promotion_ready": false,
+  "operator_required": true,
+  "runner": "packages/client/scripts/run_pack12_channel_smoke.py",
+  "matrix_artifact": "docs/specs/artifacts/pack12-first-wave-smoke-matrix-2026-06-17.json",
+  "evidence_artifact_template": "docs/specs/artifacts/pack12-claude-code-plugin-host-smoke-{timestamp}.json",
+  "not_promoted": [
+    "Template only; actual Claude Code host smoke evidence has not been produced.",
+    "Convert this template to a channel-smoke-plan with concrete host commands before running the smoke runner."
+  ],
+  "steps": {
+    "clean_environment": {
+      "purpose": "Prove the smoke runs from a clean Claude Code profile/workspace with no prior Eve state influencing the result.",
+      "command_template": [
+        "operator-run",
+        "Create a clean HOME/XDG profile, confirm no existing Eve/Claude Code config state, and record the profile path."
+      ],
+      "required_env": [
+        "EVE_PACK12_TARGET",
+        "EVE_PACK12_CLEAN_HOME"
+      ],
+      "must_contain": [
+        "clean_environment"
+      ],
+      "timeout_seconds": 120
+    },
+    "entry_url": {
+      "purpose": "Prove the hosted Claude Code installer entrypoint preserves the claude-code-plugin install_source.",
+      "command_template": [
+        "operator-run",
+        "Fetch ${EVE_PACK12_TARGET}/install?install_source=claude-code-plugin and confirm INSTALL_SOURCE, eve config set-install-source claude-code-plugin, and source-tagged connect output."
+      ],
+      "required_env": [
+        "EVE_PACK12_TARGET"
+      ],
+      "must_contain": [
+        "INSTALL_SOURCE=claude-code-plugin",
+        "eve config set-install-source claude-code-plugin",
+        "eve connect --tool claude-code"
+      ],
+      "timeout_seconds": 120
+    },
+    "install_or_import": {
+      "purpose": "Install and enable the Eve Memory Claude Code plugin through the actual Claude Code plugin mechanism or approved repo-distributed plugin path.",
+      "command_template": [
+        "operator-run",
+        "Install and enable the plugin in the clean Claude Code profile and confirm Claude Code lists/loads eve-memory@eve-memory from the installed plugin location."
+      ],
+      "required_env": [
+        "EVE_PACK12_CLEAN_HOME"
+      ],
+      "must_contain": [
+        "eve-memory@eve-memory",
+        "\"enabled\": true"
+      ],
+      "timeout_seconds": 300
+    },
+    "connect": {
+      "purpose": "Connect the installed Claude Code environment to Eve using the production-supported auth path.",
+      "command_template": [
+        "operator-run",
+        "Run eve connect --tool claude-code --install-source claude-code-plugin in the clean profile and verify MCP connectivity."
+      ],
+      "required_env": [
+        "EVE_PACK12_CLEAN_HOME"
+      ],
+      "must_contain": [
+        "claude-code",
+        "eve-memory",
+        "success"
+      ],
+      "timeout_seconds": 300
+    },
+    "store": {
+      "purpose": "Store a synthetic Pack 12 smoke memory from the connected Claude Code environment.",
+      "command_template": [
+        "operator-run",
+        "Use Claude Code's connected Eve MCP tool to store a unique synthetic memory containing ${EVE_PACK12_SMOKE_ID}."
+      ],
+      "required_env": [
+        "EVE_PACK12_SMOKE_ID"
+      ],
+      "must_contain": [
+        "memory_store",
+        "success"
+      ],
+      "timeout_seconds": 180
+    },
+    "read": {
+      "purpose": "Read back the synthetic smoke memory from the same connected Claude Code environment.",
+      "command_template": [
+        "operator-run",
+        "Use Claude Code's plugin-namespaced Eve MCP memory_search tool with store=semantic to retrieve the synthetic memory containing ${EVE_PACK12_SMOKE_ID}."
+      ],
+      "required_env": [
+        "EVE_PACK12_SMOKE_ID"
+      ],
+      "must_contain": [
+        "memory_search",
+        "EVE_PACK12_SMOKE_ID"
+      ],
+      "timeout_seconds": 180
+    },
+    "forget": {
+      "purpose": "Forget the synthetic smoke memory and prove cleanup completes.",
+      "command_template": [
+        "operator-run",
+        "Use Claude Code's Eve MCP forget/delete path to remove the synthetic smoke memory and confirm it no longer appears in read/search."
+      ],
+      "required_env": [
+        "EVE_PACK12_SMOKE_ID"
+      ],
+      "must_contain": [
+        "memory_forget",
+        "success"
+      ],
+      "timeout_seconds": 180
+    },
+    "install_source_flow": {
+      "purpose": "Prove claude-code-plugin attribution reaches local config and hosted signup/first-memory attribution.",
+      "command_template": [
+        "operator-run",
+        "Inspect local Eve config plus server-side event/metric evidence and confirm install_source=claude-code-plugin is preserved."
+      ],
+      "required_env": [
+        "EVE_PACK12_TARGET"
+      ],
+      "must_contain": [
+        "install_source=claude-code-plugin"
+      ],
+      "timeout_seconds": 180
+    },
+    "connector_install_completed": {
+      "purpose": "Exercise and verify the connector.install.completed event for the Claude Code plugin channel.",
+      "command_template": [
+        "operator-run",
+        "Trigger connector.install.completed for claude-code-plugin through the authenticated product path and verify the audit/metric event."
+      ],
+      "required_env": [
+        "EVE_PACK12_TARGET"
+      ],
+      "must_contain": [
+        "connector.install.completed",
+        "claude-code-plugin"
+      ],
+      "timeout_seconds": 180
+    },
+    "rollback_or_uninstall": {
+      "purpose": "Remove the plugin/config from the clean Claude Code profile and prove rollback leaves no active Eve channel state.",
+      "command_template": [
+        "operator-run",
+        "Run the documented plugin uninstall/rollback path in the clean profile and verify Eve-managed Claude Code config is absent."
+      ],
+      "required_env": [
+        "EVE_PACK12_CLEAN_HOME"
+      ],
+      "must_contain": [
+        "rollback",
+        "success"
+      ],
+      "timeout_seconds": 300
+    }
+  }
+}

@@ -22,6 +22,7 @@ from rich.table import Table
 from eve_client._version import __version__
 from eve_client.apply import apply_install_plan, rollback_transaction
 from eve_client.auth import CredentialStoreUnavailableError, LocalCredentialStore, OAuthSession
+from eve_client.channel_sources import normalize_install_source
 from eve_client.config import (
     DEFAULT_UI_BASE_URL,
     get_importer_ledger_path,
@@ -241,8 +242,20 @@ def _quickstart_state(tool_plan, detected_tool) -> str:
     return "detected"
 
 
-def _connect_url(config, tool_name: str) -> str:
-    query = urlencode({"tool": tool_name})
+def _resolve_install_source(config, requested_install_source: str | None) -> str | None:
+    if requested_install_source:
+        install_source = normalize_install_source(requested_install_source)
+        if install_source is None:
+            raise typer.BadParameter("unsupported install source")
+        return install_source
+    return normalize_install_source(getattr(config, "install_source", None))
+
+
+def _connect_url(config, tool_name: str, install_source: str | None = None) -> str:
+    query_payload = {"tool": tool_name}
+    if install_source and install_source != "self_serve":
+        query_payload["install_source"] = install_source
+    query = urlencode(query_payload)
     return f"{urljoin(f'{config.ui_base_url}/', 'app/connect')}?{query}"
 
 
@@ -287,8 +300,10 @@ def _oauth_tool_next_steps(tool_name: str) -> list[str]:
     ]
 
 
-def _print_oauth_guidance(config, tool_name: str, *, open_browser: bool) -> None:
-    connect_url = _connect_url(config, tool_name)
+def _print_oauth_guidance(
+    config, tool_name: str, *, open_browser: bool, install_source: str | None = None
+) -> None:
+    connect_url = _connect_url(config, tool_name, install_source)
     _print_hosted_endpoint_context(config)
     console.print(f"Connect in browser: [bold]{connect_url}[/bold]")
     console.print(f"Protected resource metadata: [bold]{_resource_metadata_url(config)}[/bold]")
@@ -1062,6 +1077,7 @@ def connect(
     api_key: str | None = typer.Option(None, "--api-key"),
     bearer_token: str | None = typer.Option(None, "--bearer-token"),
     auth_mode: str | None = typer.Option(None, "--auth-mode"),
+    install_source: str | None = typer.Option(None, "--install-source"),
     prompt_scope: str | None = typer.Option(None, "--prompt-scope"),
     hooks_enabled: bool | None = typer.Option(None, "--with-hooks/--without-hooks"),
     project: bool = typer.Option(False, "--project"),
@@ -1071,6 +1087,7 @@ def connect(
 ) -> None:
     """Guided connection flow for the best supported tool on this machine."""
     config = resolve_config()
+    resolved_install_source = _resolve_install_source(config, install_source)
     detected_tool, tool_plan, selected_auth_mode = _select_auth_candidate(
         config,
         requested_tool=tool,
@@ -1112,7 +1129,12 @@ def connect(
             console.print(Panel("[bold]Eve Connect[/bold]", style="green"))
             console.print(f"Tool: [bold]{detected_tool.name}[/bold]")
             console.print(f"Auth mode: [bold]{selected_auth_mode}[/bold]")
-            _print_oauth_guidance(config, detected_tool.name, open_browser=open_browser)
+            _print_oauth_guidance(
+                config,
+                detected_tool.name,
+                open_browser=open_browser,
+                install_source=resolved_install_source,
+            )
             return
         if "oauth" not in selected_tool_plan.supported_auth_modes:
             raise typer.BadParameter(
@@ -1169,7 +1191,12 @@ def connect(
                     f"[yellow]OAuth verification requires follow-up:[/yellow] {oauth_err}"
                 )
         elif not bearer_token:
-            _print_oauth_guidance(config, detected_tool.name, open_browser=open_browser)
+            _print_oauth_guidance(
+                config,
+                detected_tool.name,
+                open_browser=open_browser,
+                install_source=resolved_install_source,
+            )
         return
 
     config = _apply_requested_file_fallback(config, allow_file_fallback)
@@ -1914,6 +1941,20 @@ def trust_reinit(
 auth_app = typer.Typer(name="auth", help="Manage Eve client credentials.")
 app.add_typer(auth_app, name="auth")
 
+config_app = typer.Typer(name="config", help="Manage Eve client configuration.")
+app.add_typer(config_app, name="config")
+
+
+@config_app.command("set-install-source")
+def config_set_install_source(install_source: str) -> None:
+    """Persist the channel source that led to this client install."""
+
+    normalized = normalize_install_source(install_source)
+    if normalized is None:
+        raise typer.BadParameter("unsupported install source")
+    config_path = update_local_config({"install_source": normalized})
+    console.print(f"[green]Stored[/green] Eve install source: {normalized} ({config_path})")
+
 
 @auth_app.command("login")
 def auth_login(
@@ -1921,11 +1962,13 @@ def auth_login(
     api_key: str | None = typer.Option(None, "--api-key"),
     bearer_token: str | None = typer.Option(None, "--bearer-token"),
     auth_mode: str | None = typer.Option(None, "--auth-mode"),
+    install_source: str | None = typer.Option(None, "--install-source"),
     open_browser: bool = typer.Option(True, "--open-browser/--no-browser"),
     allow_file_fallback: bool = typer.Option(False, "--allow-file-fallback"),
 ) -> None:
     """Store tool auth material or launch the hosted OAuth flow."""
     config = resolve_config()
+    resolved_install_source = _resolve_install_source(config, install_source)
     detected_tool, _tool_plan, selected_auth_mode = _select_auth_candidate(
         config,
         requested_tool=tool,
@@ -1957,7 +2000,12 @@ def auth_login(
         console.print(Panel("[bold]Eve Auth[/bold]", style="green"))
         console.print(f"Tool: [bold]{tool_name}[/bold]")
         console.print(f"Auth mode: [bold]{selected_auth_mode}[/bold]")
-        _print_oauth_guidance(config, tool_name, open_browser=open_browser)
+        _print_oauth_guidance(
+            config,
+            tool_name,
+            open_browser=open_browser,
+            install_source=resolved_install_source,
+        )
         return
     config = _apply_requested_file_fallback(config, allow_file_fallback)
     if not api_key:

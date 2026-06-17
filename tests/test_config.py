@@ -67,6 +67,32 @@ def test_resolve_config_honors_local_file(monkeypatch, tmp_path: Path) -> None:
     assert config.project_root == Path.cwd().resolve()
 
 
+def test_resolve_config_honors_allowlisted_install_source(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr("eve_client.config.platform.system", lambda: "Linux")
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
+    monkeypatch.delenv("EVE_INSTALL_SOURCE", raising=False)
+    config_path = get_config_path()
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(
+        json.dumps({"install_source": "claude-code-plugin"}),
+        encoding="utf-8",
+    )
+
+    config = resolve_config()
+
+    assert config.install_source == "claude-code-plugin"
+
+
+def test_resolve_config_ignores_unallowlisted_install_source(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr("eve_client.config.platform.system", lambda: "Linux")
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
+    monkeypatch.setenv("EVE_INSTALL_SOURCE", "$(rm -rf ~)")
+
+    config = resolve_config()
+
+    assert config.install_source is None
+
+
 def test_resolve_config_includes_project_scope(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr("eve_client.config.platform.system", lambda: "Linux")
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / ".cfg"))
