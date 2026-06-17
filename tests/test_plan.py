@@ -293,3 +293,49 @@ def test_build_install_plan_omits_scope_env_when_scope_is_not_configured() -> No
         action for action in plan.tool_plans[0].actions if action.action_type == "write_config"
     )
     assert "scope_env" not in write_config.details
+
+
+def test_build_install_plan_supports_third_wave_mcp_ides() -> None:
+    detected = [
+        DetectedTool(
+            name="cursor",
+            config_path=Path("/tmp/.cursor/mcp.json"),
+            config_format="json",
+            supports_hooks=False,
+            binary_found=True,
+            config_exists=False,
+        ),
+        DetectedTool(
+            name="vscode",
+            config_path=Path("/tmp/project/.vscode/mcp.json"),
+            config_format="json",
+            supports_hooks=False,
+            binary_found=True,
+            config_exists=False,
+        ),
+        DetectedTool(
+            name="windsurf",
+            config_path=Path("/tmp/.codeium/windsurf/mcp_config.json"),
+            config_format="json",
+            supports_hooks=False,
+            binary_found=True,
+            config_exists=False,
+        ),
+    ]
+    plan = build_install_plan(detected, _config(scope=None))
+
+    assert [tool_plan.tool for tool_plan in plan.tool_plans] == [
+        "cursor",
+        "vscode",
+        "windsurf",
+    ]
+    assert all(tool_plan.supported for tool_plan in plan.tool_plans)
+    assert all(tool_plan.auth_mode == "api-key" for tool_plan in plan.tool_plans)
+    assert [
+        [action.action_type for action in tool_plan.actions]
+        for tool_plan in plan.tool_plans
+    ] == [
+        ["write_config", "auth_setup"],
+        ["write_config", "auth_setup"],
+        ["write_config", "auth_setup"],
+    ]

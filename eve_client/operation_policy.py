@@ -28,6 +28,14 @@ def _is_allowed_config_path(config: ResolvedConfig, tool: str, path: Path) -> bo
         return _matches_path_suffix(resolved, (".gemini", "settings.json"))
     if tool == "codex-cli":
         return _matches_path_suffix(resolved, (".codex", "config.toml"))
+    if tool == "cursor":
+        return _matches_path_suffix(resolved, (".cursor", "mcp.json"))
+    if tool == "vscode":
+        return resolved == (config.project_root / ".vscode" / "mcp.json").resolve(
+            strict=False
+        )
+    if tool == "windsurf":
+        return _matches_path_suffix(resolved, (".codeium", "windsurf", "mcp_config.json"))
     if tool == "claude-desktop":
         return resolved.name == "claude_desktop_config.json"
     return False
@@ -56,7 +64,8 @@ def validate_action_policy(action: PlannedAction, config: ResolvedConfig) -> Non
 
     resolved_path = action.path.resolve(strict=False)
     if action.action_type in {"write_config", "write_hooks_config"}:
-        if action.scope != "global-config" or not _is_allowed_config_path(
+        expected_scope = "project" if action.tool == "vscode" else "global-config"
+        if action.scope != expected_scope or not _is_allowed_config_path(
             config, action.tool, resolved_path
         ):
             raise OperationPolicyError(

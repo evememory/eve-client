@@ -1,6 +1,6 @@
 [project]
 name = "eve-memory-client"
-version = "0.3.0"
+version = "0.3.1"
 description = "Eve client installer and local tool integration CLI"
 readme = "README.md"
 requires-python = ">=3.11"

@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 
+from eve_client.channel_sources import normalize_install_source
 from eve_client.scope import ResolvedScope, resolve_scope
 
 DEFAULT_MCP_BASE_URL = "https://mcp.evemem.com/mcp"
@@ -28,6 +29,7 @@ OAUTH_CLIENT_ID_ENV_VAR = "EVE_OAUTH_CLIENT_ID"
 ALLOW_CUSTOM_UI_CONFIG_ENV_VAR = "EVE_ALLOW_CUSTOM_UI_BASE_URL"
 FEATURE_FLAG_ENV_VAR = "EVE_ENABLE_CLAUDE_DESKTOP"
 CODEX_DISABLE_ENV_VAR = "EVE_DISABLE_CODEX"
+INSTALL_SOURCE_ENV_VAR = "EVE_INSTALL_SOURCE"
 MAX_CONFIG_BYTES = 64 * 1024
 MCP_SERVER_NAME = "eve-memory"
 CONFIG_VERSION = 1
@@ -42,6 +44,7 @@ class LocalClientConfig:
     codex_enabled: bool
     codex_source: str
     allow_file_secret_fallback: bool
+    install_source: str | None = None
 
     @classmethod
     def from_payload(cls, payload: dict[str, object]) -> LocalClientConfig:
@@ -75,6 +78,7 @@ class LocalClientConfig:
             codex_enabled=codex_enabled,
             codex_source=codex_source,
             allow_file_secret_fallback=_is_truthy(payload.get("allow_file_secret_fallback")),
+            install_source=normalize_install_source(payload.get("install_source")),
         )
 
 
@@ -91,6 +95,7 @@ class ResolvedConfig:
     codex_enabled: bool
     codex_source: str
     allow_file_secret_fallback: bool
+    install_source: str | None = None
     ui_base_url: str = DEFAULT_UI_BASE_URL
     blocked_ui_base_url: str | None = None
     oauth_domain: str = DEFAULT_OAUTH_DOMAIN
@@ -169,6 +174,7 @@ def load_local_config() -> LocalClientConfig:
             codex_enabled=False,
             codex_source="default",
             allow_file_secret_fallback=False,
+            install_source=None,
         )
     try:
         if path.stat().st_size > MAX_CONFIG_BYTES:
@@ -180,6 +186,7 @@ def load_local_config() -> LocalClientConfig:
                 codex_enabled=False,
                 codex_source="default",
                 allow_file_secret_fallback=False,
+                install_source=None,
             )
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
@@ -191,6 +198,7 @@ def load_local_config() -> LocalClientConfig:
             codex_enabled=False,
             codex_source="default",
             allow_file_secret_fallback=False,
+            install_source=None,
         )
     if not isinstance(payload, dict):
         return LocalClientConfig(
@@ -201,6 +209,7 @@ def load_local_config() -> LocalClientConfig:
             codex_enabled=False,
             codex_source="default",
             allow_file_secret_fallback=False,
+            install_source=None,
         )
     return LocalClientConfig.from_payload(payload)
 
@@ -289,6 +298,9 @@ def resolve_config(override_mcp_base_url: str | None = None) -> ResolvedConfig:
     codex_enabled = local_config.codex_enabled and not codex_disable_env
     codex_source = "env" if codex_disable_env else local_config.codex_source
     allow_file_secret_fallback = local_config.allow_file_secret_fallback
+    install_source = normalize_install_source(
+        os.environ.get(INSTALL_SOURCE_ENV_VAR) or local_config.install_source
+    )
     return ResolvedConfig(
         config_dir=get_config_dir(),
         config_path=get_config_path(),
@@ -302,6 +314,7 @@ def resolve_config(override_mcp_base_url: str | None = None) -> ResolvedConfig:
         codex_enabled=codex_enabled,
         codex_source=codex_source,
         allow_file_secret_fallback=allow_file_secret_fallback,
+        install_source=install_source,
         blocked_ui_base_url=blocked_ui_base_url,
         oauth_domain=(os.environ.get(OAUTH_DOMAIN_ENV_VAR) or DEFAULT_OAUTH_DOMAIN).strip()
         or DEFAULT_OAUTH_DOMAIN,

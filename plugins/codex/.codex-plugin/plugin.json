@@ -1,0 +1,26 @@
+{
+  "name": "eve-memory",
+  "version": "0.1.0",
+  "description": "Persistent memory for Codex.",
+  "author": "Eve Memory",
+  "homepage": "https://evemem.com",
+  "repository": "https://github.com/evememory/eve-client",
+  "license": "Apache-2.0",
+  "keywords": ["mcp", "memory", "eve"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Eve Memory",
+    "shortDescription": "Persistent memory for Codex.",
+    "longDescription": "Connect Codex to Eve Memory using the hosted MCP endpoint and Eve-owned OAuth or bearer credentials.",
+    "developerName": "Eve Memory",
+    "category": "productivity",
+    "capabilities": ["MCP", "memory"],
+    "websiteURL": "https://evemem.com",
+    "privacyPolicyURL": "https://evemem.com/privacy",
+    "termsOfServiceURL": "https://evemem.com/terms",
+    "defaultPrompt": [
+      "Use Eve Memory to search prior project decisions before assuming context is unavailable."
+    ]
+  }
+}

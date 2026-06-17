@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "eve-memory": {
+      "command": "eve-mcp-server",
+      "env": {
+        "EVE_MCP_BASE_URL": "https://mcp.evemem.com/mcp"
+      }
+    }
+  }
+}

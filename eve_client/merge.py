@@ -39,6 +39,10 @@ def _source_agent(tool: ToolName) -> str:
     return tool.replace("-", "_")
 
 
+def _json_servers_key(tool: ToolName) -> str:
+    return "servers" if tool == "vscode" else "mcpServers"
+
+
 def source_agent_header(tool: ToolName) -> str:
     value = _source_agent(tool)
     if not SOURCE_AGENT_RE.fullmatch(value):
@@ -114,8 +118,9 @@ def merge_json_config(
     existing: dict[str, Any]
     existing = json.loads(config_path.read_text(encoding="utf-8")) if config_path.exists() else {}
     if not hooks_only:
-        existing.setdefault("mcpServers", {})
-        existing["mcpServers"].update(
+        servers_key = _json_servers_key(tool)
+        existing.setdefault(servers_key, {})
+        existing[servers_key].update(
             build_mcp_json_entry(
                 tool,
                 mcp_base_url,
@@ -136,14 +141,16 @@ def has_eve_json_entry(config_path: Path) -> bool:
     if not config_path.exists():
         return False
     existing = json.loads(config_path.read_text(encoding="utf-8"))
-    return "eve-memory" in existing.get("mcpServers", {})
+    return "eve-memory" in existing.get("mcpServers", {}) or "eve-memory" in existing.get(
+        "servers", {}
+    )
 
 
 def eve_json_entry_has_unknown_fields(config_path: Path, tool: ToolName) -> bool:
     if not config_path.exists():
         return False
     existing = json.loads(config_path.read_text(encoding="utf-8"))
-    entry = existing.get("mcpServers", {}).get("eve-memory")
+    entry = existing.get(_json_servers_key(tool), {}).get("eve-memory")
     if not isinstance(entry, dict):
         return False
     allowed_keys, allowed_header_keys = _allowed_json_entry_keys(tool)
@@ -174,12 +181,13 @@ def remove_json_config(config_path: Path) -> str:
     if not config_path.exists():
         return ""
     existing = json.loads(config_path.read_text(encoding="utf-8"))
-    servers = existing.get("mcpServers", {})
+    servers_key = "servers" if "eve-memory" in existing.get("servers", {}) else "mcpServers"
+    servers = existing.get(servers_key, {})
     if "eve-memory" not in servers:
         return json.dumps(existing, indent=2) + "\n"
     del servers["eve-memory"]
-    if not servers and "mcpServers" in existing:
-        del existing["mcpServers"]
+    if not servers and servers_key in existing:
+        del existing[servers_key]
     if _has_claude_hook_entries(existing):
         _remove_claude_hooks(existing)
     if _has_gemini_hook_entries(existing):
@@ -362,7 +370,7 @@ def _installed_scope_env(config_path: Path, tool: ToolName) -> dict[str, str]:
             parsed = json.loads(config_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
             return {}
-        env = _scope_env_node(parsed, "mcpServers")
+        env = _scope_env_node(parsed, _json_servers_key(tool))
     if not isinstance(env, dict):
         return {}
     return {

@@ -1,0 +1,26 @@
+{
+  "pack": "PACK-12",
+  "artifact": "channel-smoke-plan-template",
+  "schema_version": 1,
+  "channel": "cursor",
+  "install_source": "cursor",
+  "proof_scope": "actual_host_smoke",
+  "promotion_ready": false,
+  "operator_required": true,
+  "runner": "packages/client/scripts/run_pack12_channel_smoke.py",
+  "matrix_artifact": "docs/specs/artifacts/pack12-remaining-channel-smoke-matrix-2026-06-17.json",
+  "evidence_artifact_template": "docs/specs/artifacts/pack12-cursor-host-smoke-{timestamp}.json",
+  "not_promoted": ["Template only; actual Cursor registry-provider smoke evidence has not been produced."],
+  "steps": {
+    "clean_environment": {"purpose": "Prove a clean Cursor profile/workspace.", "command_template": ["operator-run", "Create clean Cursor profile and confirm no Eve MCP config."], "required_env": ["EVE_PACK12_CLEAN_PROFILE"], "must_contain": ["clean_environment"], "timeout_seconds": 120},
+    "entry_url": {"purpose": "Prove Cursor channel attribution.", "command_template": ["operator-run", "Open Cursor channel docs/listing path and confirm install_source=cursor."], "required_env": ["EVE_PACK12_TARGET"], "must_contain": ["install_source=cursor"], "timeout_seconds": 120},
+    "install_or_import": {"purpose": "Apply Eve MCP config through the Cursor provider path.", "command_template": ["operator-run", "Run Eve client Cursor install/apply from a clean profile and confirm eve-memory config."], "required_env": ["EVE_PACK12_CLEAN_PROFILE"], "must_contain": ["eve-memory"], "timeout_seconds": 300},
+    "connect": {"purpose": "Connect Cursor to Eve MCP.", "command_template": ["operator-run", "Complete Cursor MCP auth/connect and verify connectivity."], "required_env": ["EVE_PACK12_TARGET"], "must_contain": ["cursor", "connected"], "timeout_seconds": 300},
+    "store": {"purpose": "Store a smoke memory from Cursor.", "command_template": ["operator-run", "Use Cursor Eve MCP to store ${EVE_PACK12_SMOKE_ID}."], "required_env": ["EVE_PACK12_SMOKE_ID"], "must_contain": ["memory_store", "success"], "timeout_seconds": 180},
+    "read": {"purpose": "Read the smoke memory from Cursor.", "command_template": ["operator-run", "Use Cursor Eve MCP to read ${EVE_PACK12_SMOKE_ID}."], "required_env": ["EVE_PACK12_SMOKE_ID"], "must_contain": ["memory_read", "EVE_PACK12_SMOKE_ID"], "timeout_seconds": 180},
+    "forget": {"purpose": "Forget the smoke memory from Cursor.", "command_template": ["operator-run", "Use Cursor Eve MCP to forget ${EVE_PACK12_SMOKE_ID}."], "required_env": ["EVE_PACK12_SMOKE_ID"], "must_contain": ["memory_forget", "success"], "timeout_seconds": 180},
+    "install_source_flow": {"purpose": "Prove cursor attribution.", "command_template": ["operator-run", "Verify install_source=cursor in local/server evidence."], "required_env": ["EVE_PACK12_TARGET"], "must_contain": ["install_source=cursor"], "timeout_seconds": 180},
+    "connector_install_completed": {"purpose": "Exercise connector.install.completed for cursor.", "command_template": ["operator-run", "Trigger and verify connector.install.completed for cursor."], "required_env": ["EVE_PACK12_TARGET"], "must_contain": ["connector.install.completed", "cursor"], "timeout_seconds": 180},
+    "rollback_or_uninstall": {"purpose": "Rollback Cursor config.", "command_template": ["operator-run", "Remove Eve MCP from Cursor and verify config is absent."], "required_env": ["EVE_PACK12_CLEAN_PROFILE"], "must_contain": ["rollback", "success"], "timeout_seconds": 300}
+  }
+}

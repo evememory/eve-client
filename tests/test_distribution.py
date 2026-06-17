@@ -48,6 +48,10 @@ def _package_version() -> str:
     return str(data["project"]["version"])
 
 
+def test_pack12_release_version_advances_beyond_published_0_3_0() -> None:
+    assert _package_version() == "0.3.1"
+
+
 def _write_fake_uv(bin_dir: Path, installed_bin_dir: Path, command_log: Path) -> None:
     (bin_dir / "uv").write_text(
         "#!/usr/bin/env bash\n"

@@ -159,6 +159,54 @@ def test_apply_install_plan_writes_project_scoped_gemini_companion(
     assert not (tmp_path / ".gemini" / "GEMINI.md").exists()
 
 
+def test_apply_install_plan_writes_third_wave_mcp_ide_configs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    def fake_which(name: str) -> str | None:
+        if name in {"cursor", "code", "windsurf"}:
+            return f"/usr/bin/{name}"
+        return None
+
+    with (
+        patch("eve_client.detect.base._home", return_value=tmp_path),
+        patch("eve_client.detect.base.shutil.which", side_effect=fake_which),
+        patched_keyring(),
+    ):
+        detected = detect_tools(only=["cursor", "vscode", "windsurf"])
+        plan = build_install_plan(detected, _config(tmp_path))
+        result = apply_install_plan(
+            plan,
+            _config(tmp_path),
+            LocalCredentialStore(_config(tmp_path).state_dir),
+            provided_api_keys={
+                "cursor": "eve-secret",
+                "vscode": "eve-secret",
+                "windsurf": "eve-secret",
+            },
+        )
+
+    assert result.applied_actions == 3
+    cursor_payload = json.loads((tmp_path / ".cursor" / "mcp.json").read_text())
+    assert cursor_payload["mcpServers"]["eve-memory"]["headers"] == {
+        "X-API-Key": "eve-secret",
+        "X-Source-Agent": "cursor",
+    }
+    vscode_payload = json.loads((tmp_path / ".vscode" / "mcp.json").read_text())
+    assert vscode_payload["servers"]["eve-memory"]["headers"] == {
+        "X-API-Key": "eve-secret",
+        "X-Source-Agent": "vscode",
+    }
+    windsurf_payload = json.loads(
+        (tmp_path / ".codeium" / "windsurf" / "mcp_config.json").read_text()
+    )
+    assert windsurf_payload["mcpServers"]["eve-memory"]["headers"] == {
+        "X-API-Key": "eve-secret",
+        "X-Source-Agent": "windsurf",
+    }
+
+
 def test_apply_install_plan_writes_scope_env_for_supported_tools(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

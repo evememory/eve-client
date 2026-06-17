@@ -1,0 +1,171 @@
+{
+  "pack": "PACK-12",
+  "artifact": "channel-smoke-plan-template",
+  "schema_version": 1,
+  "channel": "claude-desktop",
+  "install_source": "claude-desktop",
+  "proof_scope": "actual_host_smoke",
+  "promotion_ready": false,
+  "operator_required": true,
+  "runner": "packages/client/scripts/run_pack12_channel_smoke.py",
+  "matrix_artifact": "docs/specs/artifacts/pack12-first-wave-smoke-matrix-2026-06-17.json",
+  "evidence_artifact_template": "docs/specs/artifacts/pack12-claude-desktop-host-smoke-{timestamp}.json",
+  "not_promoted": [
+    "Template only; actual Claude Desktop or claude.ai host smoke evidence has not been produced.",
+    "Convert this template to a channel-smoke-plan with concrete host commands before running the smoke runner."
+  ],
+  "steps": {
+    "clean_environment": {
+      "purpose": "Prove the smoke runs from a clean Claude Desktop/claude.ai profile with no prior Eve connector state influencing the result.",
+      "command_template": [
+        "operator-run",
+        "Create or select a clean Claude Desktop/claude.ai profile, confirm Eve is not already connected, and record the profile/account boundary."
+      ],
+      "required_env": [
+        "EVE_PACK12_TARGET",
+        "EVE_PACK12_CLEAN_PROFILE"
+      ],
+      "must_contain": [
+        "clean_environment"
+      ],
+      "timeout_seconds": 120
+    },
+    "entry_url": {
+      "purpose": "Prove the hosted Claude Desktop connector entrypoint preserves tool and claude-desktop install_source through login redirect.",
+      "command_template": [
+        "operator-run",
+        "Open ${EVE_PACK12_TARGET}/app/connect?tool=claude-desktop&install_source=claude-desktop and confirm the Auth0 login URL preserves returnTo, tool, and install_source."
+      ],
+      "required_env": [
+        "EVE_PACK12_TARGET"
+      ],
+      "must_contain": [
+        "tool=claude-desktop",
+        "install_source=claude-desktop",
+        "returnTo"
+      ],
+      "timeout_seconds": 180
+    },
+    "install_or_import": {
+      "purpose": "Import the hosted Eve remote MCP connector into Claude Desktop or claude.ai from the clean profile.",
+      "command_template": [
+        "operator-run",
+        "Add/import https://mcp.evemem.com/mcp as the Eve Memory remote MCP connector and confirm the Eve tools are visible."
+      ],
+      "required_env": [
+        "EVE_PACK12_CLEAN_PROFILE"
+      ],
+      "must_contain": [
+        "https://mcp.evemem.com/mcp",
+        "memory_read",
+        "memory_store"
+      ],
+      "timeout_seconds": 300
+    },
+    "connect": {
+      "purpose": "Complete OAuth/account selection for the Claude Desktop connector and prove the connected MCP tools are usable.",
+      "command_template": [
+        "operator-run",
+        "Complete the hosted OAuth/account-selection flow from Claude Desktop/claude.ai and confirm Eve Memory is connected."
+      ],
+      "required_env": [
+        "EVE_PACK12_TARGET"
+      ],
+      "must_contain": [
+        "OAuth",
+        "Eve Memory",
+        "connected"
+      ],
+      "timeout_seconds": 420
+    },
+    "store": {
+      "purpose": "Store a synthetic Pack 12 smoke memory from the connected Claude Desktop/claude.ai environment.",
+      "command_template": [
+        "operator-run",
+        "Use Claude Desktop/claude.ai's connected Eve MCP tool to store a unique synthetic memory containing ${EVE_PACK12_SMOKE_ID}."
+      ],
+      "required_env": [
+        "EVE_PACK12_SMOKE_ID"
+      ],
+      "must_contain": [
+        "memory_store",
+        "success"
+      ],
+      "timeout_seconds": 180
+    },
+    "read": {
+      "purpose": "Read back the synthetic smoke memory from the same connected Claude Desktop/claude.ai environment.",
+      "command_template": [
+        "operator-run",
+        "Use Claude Desktop/claude.ai's Eve MCP read/search tool to retrieve the synthetic memory containing ${EVE_PACK12_SMOKE_ID}."
+      ],
+      "required_env": [
+        "EVE_PACK12_SMOKE_ID"
+      ],
+      "must_contain": [
+        "memory_read",
+        "EVE_PACK12_SMOKE_ID"
+      ],
+      "timeout_seconds": 180
+    },
+    "forget": {
+      "purpose": "Forget the synthetic smoke memory and prove cleanup completes.",
+      "command_template": [
+        "operator-run",
+        "Use Claude Desktop/claude.ai's Eve MCP forget/delete path to remove the synthetic smoke memory and confirm it no longer appears in read/search."
+      ],
+      "required_env": [
+        "EVE_PACK12_SMOKE_ID"
+      ],
+      "must_contain": [
+        "memory_forget",
+        "success"
+      ],
+      "timeout_seconds": 180
+    },
+    "install_source_flow": {
+      "purpose": "Prove claude-desktop attribution reaches hosted signup/first-memory attribution.",
+      "command_template": [
+        "operator-run",
+        "Inspect server-side event/metric evidence and confirm install_source=claude-desktop is preserved for the connector flow."
+      ],
+      "required_env": [
+        "EVE_PACK12_TARGET"
+      ],
+      "must_contain": [
+        "install_source=claude-desktop"
+      ],
+      "timeout_seconds": 180
+    },
+    "connector_install_completed": {
+      "purpose": "Exercise and verify the connector.install.completed event for the Claude Desktop channel.",
+      "command_template": [
+        "operator-run",
+        "Trigger connector.install.completed for claude-desktop through the authenticated product path and verify the audit/metric event."
+      ],
+      "required_env": [
+        "EVE_PACK12_TARGET"
+      ],
+      "must_contain": [
+        "connector.install.completed",
+        "claude-desktop"
+      ],
+      "timeout_seconds": 180
+    },
+    "rollback_or_uninstall": {
+      "purpose": "Disconnect/remove the Eve remote MCP connector from the clean Claude Desktop/claude.ai profile and prove rollback leaves no active Eve channel state.",
+      "command_template": [
+        "operator-run",
+        "Run the documented disconnect/remove path in Claude Desktop/claude.ai and verify Eve Memory is no longer connected."
+      ],
+      "required_env": [
+        "EVE_PACK12_CLEAN_PROFILE"
+      ],
+      "must_contain": [
+        "disconnect",
+        "success"
+      ],
+      "timeout_seconds": 300
+    }
+  }
+}
