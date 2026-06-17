@@ -288,12 +288,12 @@ def test_pack12_client_release_boundary_artifact_is_not_promoted() -> None:
     assert artifact["pack"] == "PACK-12"
     assert artifact["artifact"] == "client-release-boundary"
     assert artifact["distribution"] == "eve-memory-client"
-    assert artifact["prepared_version"] == "0.3.1"
+    assert artifact["prepared_version"] == "0.3.2"
     assert artifact["published_version_blocking_smoke"] == "0.3.0"
     assert artifact["status"] == "prepared_not_published"
     assert artifact["promotion_ready"] is False
     assert artifact["local_preparation"]["release_tag_to_create_after_review"] == (
-        "eve-memory-client@0.3.1"
+        "eve-memory-client@0.3.2"
     )
     assert any(
         "does not publish the package" in reason for reason in artifact["not_promoted"]

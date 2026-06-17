@@ -5,9 +5,14 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 
 MONOREPO_ROOT = Path(__file__).resolve().parents[3]
 SCRIPT_PATH = MONOREPO_ROOT / "scripts" / "deployment" / "verify_pack12_entrypoints.py"
+
+if not SCRIPT_PATH.exists():
+    pytest.skip("monorepo Pack 12 entrypoint probe is not available", allow_module_level=True)
 
 spec = importlib.util.spec_from_file_location("verify_pack12_entrypoints", SCRIPT_PATH)
 assert spec is not None and spec.loader is not None
