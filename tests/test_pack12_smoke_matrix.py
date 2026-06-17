@@ -67,6 +67,24 @@ def test_active_pack12_smoke_matrix_tracks_first_wave_and_openai_channels() -> N
             assert channel["checks"]["install_or_import"] == "blocked"
             assert channel["checks"]["install_source_flow"] == "blocked"
             assert channel["checks"]["rollback_or_uninstall"] == "blocked"
+        elif channel_id == "codex-plugin":
+            assert all(
+                status in {"pass", "blocked"} for status in channel["checks"].values()
+            )
+            assert channel["checks"]["clean_environment"] == "blocked"
+            assert channel["checks"]["entry_url"] == "pass"
+            assert channel["checks"]["install_or_import"] == "blocked"
+            assert channel["checks"]["install_source_flow"] == "blocked"
+            assert channel["checks"]["rollback_or_uninstall"] == "blocked"
+        elif channel_id == "chatgpt-app":
+            assert all(
+                status in {"pass", "blocked"} for status in channel["checks"].values()
+            )
+            assert channel["checks"]["clean_environment"] == "blocked"
+            assert channel["checks"]["entry_url"] == "pass"
+            assert channel["checks"]["install_or_import"] == "blocked"
+            assert channel["checks"]["install_source_flow"] == "blocked"
+            assert channel["checks"]["rollback_or_uninstall"] == "blocked"
         else:
             assert all(status == "not_run" for status in channel["checks"].values())
 
@@ -87,7 +105,12 @@ def test_active_pack12_smoke_matrix_tracks_first_wave_and_openai_channels() -> N
         assert channel["production_entrypoint_probe_artifact"] == (
             "docs/specs/artifacts/pack12-production-entrypoint-probe-2026-06-17.json"
         )
-        if channel_id not in {"claude-code-plugin", "claude-desktop"}:
+        if channel_id not in {
+            "claude-code-plugin",
+            "claude-desktop",
+            "codex-plugin",
+            "chatgpt-app",
+        }:
             assert channel["checks"]["entry_url"] == "not_run"
             assert not channel.get("blocked_by")
 
@@ -131,6 +154,27 @@ def test_active_pack12_smoke_matrix_tracks_first_wave_and_openai_channels() -> N
     assert "no existing Eve MCP server" in claude_desktop["blocked_by"][0]
     assert "hosted MCP/auth boundary" in claude_desktop["blocked_by"][1]
     assert "connector import" in claude_desktop["blocked_by"][2]
+
+    codex = channels["codex-plugin"]
+    assert codex["clean_profile_package_smoke_artifact"] == (
+        "docs/specs/artifacts/pack12-codex-plugin-clean-profile-smoke-2026-06-17.json"
+    )
+    assert codex["host_capability_probe_artifact"] == (
+        "docs/specs/artifacts/pack12-codex-plugin-host-capability-probe-2026-06-17.json"
+    )
+    assert "direct eve-memory MCP" in codex["probe"]["observed"]
+    assert "package integrity is proven" in codex["blocked_by"][0]
+    assert "direct eve-memory MCP server" in codex["blocked_by"][1]
+    assert "clean Codex profile" in codex["blocked_by"][2]
+
+    chatgpt = channels["chatgpt-app"]
+    assert chatgpt["host_capability_probe_artifact"] == (
+        "docs/specs/artifacts/pack12-chatgpt-app-host-capability-probe-2026-06-17.json"
+    )
+    assert "Official OpenAI docs confirm" in chatgpt["probe"]["observed"]
+    assert "reachable HTTPS MCP endpoint" in chatgpt["blocked_by"][0]
+    assert "external ChatGPT UI/account flow" in chatgpt["blocked_by"][1]
+    assert "submission/privacy/tool-behavior audit" in chatgpt["blocked_by"][2]
 
 
 def test_pack12_smoke_matrix_rejects_promoted_channel_without_full_smoke(

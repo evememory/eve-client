@@ -789,6 +789,51 @@ def test_codex_plugin_clean_profile_smoke_artifact_is_not_promoted() -> None:
     }
 
 
+def test_codex_plugin_host_capability_probe_blocks_direct_mcp_contamination() -> None:
+    artifact_path = (
+        MONOREPO_ROOT
+        / "docs"
+        / "specs"
+        / "artifacts"
+        / "pack12-codex-plugin-host-capability-probe-2026-06-17.json"
+    )
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+
+    assert artifact["pack"] == "PACK-12"
+    assert artifact["channel"] == "codex-plugin"
+    assert artifact["artifact"] == "codex-plugin-host-capability-probe"
+    assert artifact["ok"] is True
+    assert artifact["promotion_ready"] is False
+    assert artifact["checks"] == {
+        "codex_cli_present": "pass",
+        "pack12_plugin_source_present": "pass",
+        "clean_profile_package_integrity": "pass",
+        "codex_plugin_installed": "blocked",
+        "existing_direct_eve_mcp_detected": "pass",
+        "current_host_uncontaminated": "blocked",
+        "oauth_connect": "blocked",
+        "store_read_forget": "blocked",
+        "connector_install_completed": "blocked",
+        "rollback_or_uninstall": "blocked",
+    }
+    assert any(
+        "direct eve-memory MCP server configured" in observation
+        for observation in artifact["observations"]
+    )
+    assert any(
+        "contaminated by a direct host MCP config" in reason
+        for reason in artifact["not_promoted"]
+    )
+    assert artifact["remaining_before_promotion"] == [
+        "Create a clean Codex profile without direct eve-memory MCP config.",
+        "Install or load the Pack 12 Codex plugin through the actual Codex plugin mechanism or approved repo-distributed plugin path.",
+        "Run eve connect --tool codex-cli --auth-mode oauth --install-source codex-plugin against production.",
+        "Run store/read/forget smoke from the connected Codex plugin environment.",
+        "Verify install_source=codex-plugin attribution and connector.install.completed telemetry.",
+        "Run rollback/uninstall proof from the clean profile.",
+    ]
+
+
 def test_chatgpt_readiness_artifact_is_not_promoted() -> None:
     artifact_path = (
         MONOREPO_ROOT
@@ -810,6 +855,9 @@ def test_chatgpt_readiness_artifact_is_not_promoted() -> None:
         artifact["managed_connect_url"]
         == "https://evemem.com/app/connect?install_source=chatgpt-app"
     )
+    assert artifact["host_capability_probe_artifact"] == (
+        "docs/specs/artifacts/pack12-chatgpt-app-host-capability-probe-2026-06-17.json"
+    )
     assert set(artifact["required_before_submission"]) == {
         "developer-mode import smoke",
         "OAuth or supported auth-mode confirmation",
@@ -826,6 +874,60 @@ def test_chatgpt_readiness_artifact_is_not_promoted() -> None:
     assert artifact["tool_annotation_audit"]["destructive_tools"] == ["memory_forget"]
     assert "not ChatGPT developer-mode validation" in artifact["tool_annotation_audit"][
         "observed"
+    ]
+
+
+def test_chatgpt_host_capability_probe_is_not_promotion_evidence() -> None:
+    artifact_path = (
+        MONOREPO_ROOT
+        / "docs"
+        / "specs"
+        / "artifacts"
+        / "pack12-chatgpt-app-host-capability-probe-2026-06-17.json"
+    )
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+
+    assert artifact["pack"] == "PACK-12"
+    assert artifact["channel"] == "chatgpt-app"
+    assert artifact["artifact"] == "chatgpt-app-host-capability-probe"
+    assert artifact["ok"] is True
+    assert artifact["promotion_ready"] is False
+    assert artifact["checks"] == {
+        "official_developer_mode_path_verified": "pass",
+        "hosted_https_mcp_endpoint_documented": "pass",
+        "tool_annotation_readiness": "pass",
+        "production_entrypoint": "pass",
+        "chatgpt_developer_mode_access": "blocked",
+        "developer_mode_import": "blocked",
+        "oauth_or_supported_auth_confirmation": "blocked",
+        "tool_visibility": "blocked",
+        "store_read_forget": "blocked",
+        "connector_install_completed": "blocked",
+        "rollback_or_disconnect": "blocked",
+        "submission_policy_audit": "blocked",
+    }
+    source_urls = {source["url"] for source in artifact["official_sources"]}
+    assert "https://developers.openai.com/apps-sdk/deploy/connect-chatgpt" in source_urls
+    assert "https://developers.openai.com/api/docs/guides/developer-mode" in source_urls
+    assert "https://developers.openai.com/apps-sdk/deploy/testing" in source_urls
+    assert "https://developers.openai.com/apps-sdk/deploy/submission" in source_urls
+    assert any(
+        "repo shell cannot prove ChatGPT developer-mode access" in observation
+        for observation in artifact["observations"]
+    )
+    assert any(
+        "actual ChatGPT developer-mode import" in reason
+        for reason in artifact["not_promoted"]
+    )
+    assert artifact["remaining_before_promotion"] == [
+        "Enable or access ChatGPT developer mode in an eligible account or workspace.",
+        "Create the Eve app/connector in ChatGPT using https://mcp.evemem.com/mcp.",
+        "Confirm OAuth or supported auth mode works for Eve.",
+        "Confirm expected Eve tools are visible with safe descriptions and annotations.",
+        "Run store/read/forget smoke from the connected ChatGPT environment.",
+        "Verify install_source=chatgpt-app attribution and connector.install.completed telemetry.",
+        "Run disconnect/rollback proof.",
+        "Complete submission/privacy/PII/tool-behavior audit before public publication.",
     ]
 
 

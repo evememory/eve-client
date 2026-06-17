@@ -44,6 +44,26 @@ def test_pack12_readiness_rollup_passes_for_current_artifacts() -> None:
 
     assert result.ok
     assert result.errors == []
+    assert (
+        "docs/specs/artifacts/pack12-client-release-boundary-2026-06-17.json"
+        in verifier.REQUIRED_ARTIFACTS
+    )
+    assert (
+        "docs/specs/artifacts/pack12-claude-code-plugin-host-capability-probe-2026-06-17.json"
+        in verifier.PROMOTION_FALSE_ARTIFACTS
+    )
+    assert (
+        "docs/specs/artifacts/pack12-claude-desktop-host-capability-probe-2026-06-17.json"
+        in verifier.PROMOTION_FALSE_ARTIFACTS
+    )
+    assert (
+        "docs/specs/artifacts/pack12-codex-plugin-host-capability-probe-2026-06-17.json"
+        in verifier.PROMOTION_FALSE_ARTIFACTS
+    )
+    assert (
+        "docs/specs/artifacts/pack12-chatgpt-app-host-capability-probe-2026-06-17.json"
+        in verifier.PROMOTION_FALSE_ARTIFACTS
+    )
 
 
 def test_pack12_readiness_rollup_rejects_promoted_readiness_artifact(

@@ -63,6 +63,11 @@ REQUIRED_ARTIFACTS = (
     "docs/specs/artifacts/pack12-remaining-channel-smoke-plan-templates-2026-06-17.json",
     "docs/specs/artifacts/pack12-channel-analytics-readiness-2026-06-17.json",
     "docs/specs/artifacts/pack12-production-entrypoint-probe-2026-06-17.json",
+    "docs/specs/artifacts/pack12-client-release-boundary-2026-06-17.json",
+    "docs/specs/artifacts/pack12-claude-code-plugin-host-capability-probe-2026-06-17.json",
+    "docs/specs/artifacts/pack12-claude-desktop-host-capability-probe-2026-06-17.json",
+    "docs/specs/artifacts/pack12-codex-plugin-host-capability-probe-2026-06-17.json",
+    "docs/specs/artifacts/pack12-chatgpt-app-host-capability-probe-2026-06-17.json",
 )
 
 PROMOTION_FALSE_ARTIFACTS = (
@@ -75,6 +80,11 @@ PROMOTION_FALSE_ARTIFACTS = (
     "docs/specs/artifacts/pack12-second-wave-smoke-plan-templates-2026-06-17.json",
     "docs/specs/artifacts/pack12-remaining-channel-smoke-plan-templates-2026-06-17.json",
     "docs/specs/artifacts/pack12-channel-analytics-readiness-2026-06-17.json",
+    "docs/specs/artifacts/pack12-client-release-boundary-2026-06-17.json",
+    "docs/specs/artifacts/pack12-claude-code-plugin-host-capability-probe-2026-06-17.json",
+    "docs/specs/artifacts/pack12-claude-desktop-host-capability-probe-2026-06-17.json",
+    "docs/specs/artifacts/pack12-codex-plugin-host-capability-probe-2026-06-17.json",
+    "docs/specs/artifacts/pack12-chatgpt-app-host-capability-probe-2026-06-17.json",
 )
 
 
