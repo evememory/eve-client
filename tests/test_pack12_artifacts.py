@@ -3,11 +3,20 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from scripts.validate_pack12_artifacts import validate_artifact_tree
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MONOREPO_ROOT = REPO_ROOT.parents[1]
+MONOREPO_ARTIFACTS_ROOT = MONOREPO_ROOT / "docs" / "specs" / "artifacts"
+
+if not MONOREPO_ARTIFACTS_ROOT.exists():
+    pytest.skip(
+        "monorepo Pack 12 evidence artifacts are not available",
+        allow_module_level=True,
+    )
 
 
 def test_missing_pack12_artifact_tree_fails(tmp_path: Path) -> None:
@@ -288,12 +297,12 @@ def test_pack12_client_release_boundary_artifact_is_not_promoted() -> None:
     assert artifact["pack"] == "PACK-12"
     assert artifact["artifact"] == "client-release-boundary"
     assert artifact["distribution"] == "eve-memory-client"
-    assert artifact["prepared_version"] == "0.3.2"
+    assert artifact["prepared_version"] == "0.3.3"
     assert artifact["published_version_blocking_smoke"] == "0.3.0"
     assert artifact["status"] == "prepared_not_published"
     assert artifact["promotion_ready"] is False
     assert artifact["local_preparation"]["release_tag_to_create_after_review"] == (
-        "eve-memory-client@0.3.2"
+        "eve-memory-client@0.3.3"
     )
     assert any(
         "does not publish the package" in reason for reason in artifact["not_promoted"]

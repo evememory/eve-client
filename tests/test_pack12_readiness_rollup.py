@@ -9,10 +9,19 @@ import sys
 from pathlib import Path
 from types import ModuleType
 
+import pytest
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MONOREPO_ROOT = REPO_ROOT.parents[1]
+MONOREPO_ARTIFACTS_ROOT = MONOREPO_ROOT / "docs" / "specs" / "artifacts"
 SCRIPT_PATH = REPO_ROOT / "scripts" / "validate_pack12_readiness_rollup.py"
+
+if not MONOREPO_ARTIFACTS_ROOT.exists():
+    pytest.skip(
+        "monorepo Pack 12 evidence artifacts are not available",
+        allow_module_level=True,
+    )
 
 
 def _load_verifier() -> ModuleType:

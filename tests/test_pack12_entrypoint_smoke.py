@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from scripts.validate_pack12_entrypoint_smoke import (
     REQUIRED_INSTALLER_CHANNELS,
     REQUIRED_LOCAL_CHECKS,
@@ -12,6 +14,13 @@ from scripts.validate_pack12_entrypoint_smoke import (
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MONOREPO_ROOT = REPO_ROOT.parents[1]
+MONOREPO_ARTIFACTS_ROOT = MONOREPO_ROOT / "docs" / "specs" / "artifacts"
+
+if not MONOREPO_ARTIFACTS_ROOT.exists():
+    pytest.skip(
+        "monorepo Pack 12 evidence artifacts are not available",
+        allow_module_level=True,
+    )
 
 
 def test_pack12_source_tagged_installer_local_smoke_artifact_is_valid() -> None:

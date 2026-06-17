@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from scripts.validate_pack12_smoke_matrix import (
     REMAINING_REQUIRED_CHANNELS,
     REQUIRED_CHANNELS,
@@ -14,6 +16,13 @@ from scripts.validate_pack12_smoke_matrix import (
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MONOREPO_ROOT = REPO_ROOT.parents[1]
+MONOREPO_ARTIFACTS_ROOT = MONOREPO_ROOT / "docs" / "specs" / "artifacts"
+
+if not MONOREPO_ARTIFACTS_ROOT.exists():
+    pytest.skip(
+        "monorepo Pack 12 evidence artifacts are not available",
+        allow_module_level=True,
+    )
 
 
 def test_active_pack12_smoke_matrix_tracks_first_wave_and_openai_channels() -> None:

@@ -49,7 +49,7 @@ def _package_version() -> str:
 
 
 def test_pack12_release_version_advances_beyond_published_0_3_0() -> None:
-    assert _package_version() == "0.3.2"
+    assert _package_version() == "0.3.3"
 
 
 def _write_fake_uv(bin_dir: Path, installed_bin_dir: Path, command_log: Path) -> None:
@@ -666,6 +666,7 @@ def test_publish_script_uses_env_token_without_putting_secret_on_command_line(
             **os.environ,
             "PATH": f"{bin_dir}:{os.environ['PATH']}",
             "EVE_TEST_COMMAND_LOG": str(log_path),
+            "GITHUB_ACTIONS": "",
             "PYPI_API_TOKEN": "secret-token",
         },
     )
