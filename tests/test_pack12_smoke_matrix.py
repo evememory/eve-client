@@ -49,10 +49,17 @@ def test_active_pack12_smoke_matrix_tracks_first_wave_and_openai_channels() -> N
         assert channel["install_source"] == expected_source
         assert channel["promotion_ready"] is False
         assert set(channel["checks"]) == set(REQUIRED_SMOKE_CHECKS)
-        assert all(
-            status in {"not_run", "blocked"} for status in channel["checks"].values()
-        )
-        assert "pass" not in set(channel["checks"].values())
+        if channel_id == "claude-code-plugin":
+            assert all(
+                status in {"pass", "blocked"} for status in channel["checks"].values()
+            )
+            assert channel["checks"]["clean_environment"] == "pass"
+            assert channel["checks"]["entry_url"] == "pass"
+            assert channel["checks"]["install_or_import"] == "pass"
+            assert channel["checks"]["install_source_flow"] == "pass"
+            assert channel["checks"]["rollback_or_uninstall"] == "blocked"
+        else:
+            assert all(status == "not_run" for status in channel["checks"].values())
 
     production_probe = json.loads(
         (
@@ -68,30 +75,36 @@ def test_active_pack12_smoke_matrix_tracks_first_wave_and_openai_channels() -> N
     assert production_probe["deployment_gate"]["status"] == "validated"
 
     for channel_id, channel in channels.items():
-        assert channel["checks"]["entry_url"] == "not_run"
         assert channel["production_entrypoint_probe_artifact"] == (
             "docs/specs/artifacts/pack12-production-entrypoint-probe-2026-06-17.json"
         )
         if channel_id != "claude-code-plugin":
+            assert channel["checks"]["entry_url"] == "not_run"
             assert not channel.get("blocked_by")
 
     claude_code = channels["claude-code-plugin"]
     assert claude_code["semantic_mcp_smoke_artifact"] == (
         "docs/specs/artifacts/pack12-claude-code-plugin-semantic-mcp-smoke-2026-06-17.json"
     )
-    assert claude_code["failed_host_smoke_artifact"] == (
-        "docs/specs/artifacts/pack12-claude-code-plugin-host-smoke-2026-06-17-public-client-release-blocker.json"
+    assert claude_code["partial_host_smoke_artifact"] == (
+        "docs/specs/artifacts/pack12-claude-code-plugin-host-smoke-2026-06-17-public-client-0.3.3-v2.json"
+    )
+    assert claude_code["partial_host_smoke_gate_artifact"] == (
+        "docs/specs/artifacts/pack12-claude-code-plugin-host-smoke-gate-2026-06-17-public-client-0.3.3-v2.json"
     )
     assert claude_code["client_release_boundary_artifact"] == (
         "docs/specs/artifacts/pack12-client-release-boundary-2026-06-17.json"
     )
     assert "semantic MCP store/search/forget is proven" in claude_code["probe"]["observed"]
-    assert "published client package lacks" in claude_code["probe"]["observed"]
-    assert claude_code["checks"]["install_or_import"] == "blocked"
+    assert "public-client host smoke now passes" in claude_code["probe"]["observed"]
+    assert "still not promoted" in claude_code["probe"]["observed"]
+    assert claude_code["checks"]["install_or_import"] == "pass"
     assert claude_code["checks"]["store"] == "blocked"
     assert claude_code["checks"]["read"] == "blocked"
     assert claude_code["checks"]["forget"] == "blocked"
-    assert "No such command 'config'" in claude_code["blocked_by"][0]
+    assert claude_code["checks"]["connector_install_completed"] == "blocked"
+    assert "0.3.3 clears" in claude_code["blocked_by"][0]
+    assert "authenticated Claude Code host session" in claude_code["blocked_by"][1]
 
 
 def test_pack12_smoke_matrix_rejects_promoted_channel_without_full_smoke(

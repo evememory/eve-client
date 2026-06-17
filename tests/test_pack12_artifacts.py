@@ -284,6 +284,50 @@ def test_claude_code_plugin_public_client_release_blocker_artifact_is_not_promot
     assert "No such command 'config'" in failed_install["stderr_preview"]
 
 
+def test_claude_code_plugin_public_client_0_3_3_partial_smoke_is_not_promoted() -> None:
+    artifact_path = (
+        MONOREPO_ROOT
+        / "docs"
+        / "specs"
+        / "artifacts"
+        / "pack12-claude-code-plugin-host-smoke-2026-06-17-public-client-0.3.3-v2.json"
+    )
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+
+    assert artifact["pack"] == "PACK-12"
+    assert artifact["artifact"] == "channel-smoke-evidence"
+    assert artifact["channel"] == "claude-code-plugin"
+    assert artifact["proof_scope"] == "actual_host_smoke"
+    assert artifact["promotion_ready"] is False
+    assert artifact["checks"]["clean_environment"] == "pass"
+    assert artifact["checks"]["entry_url"] == "pass"
+    assert artifact["checks"]["install_or_import"] == "pass"
+    assert artifact["checks"]["install_source_flow"] == "pass"
+    assert artifact["checks"]["connect"] == "fail"
+    assert artifact["checks"]["store"] == "fail"
+    assert artifact["checks"]["read"] == "fail"
+    assert artifact["checks"]["forget"] == "fail"
+    assert artifact["checks"]["connector_install_completed"] == "fail"
+    assert artifact["checks"]["rollback_or_uninstall"] == "pass"
+    assert artifact["not_promoted"] == ["connect failed"]
+
+    install = next(
+        step for step in artifact["step_results"] if step["check"] == "install_or_import"
+    )
+    assert "public-client-version=0.3.3" in install["stdout_preview"]
+
+    install_source = next(
+        step for step in artifact["step_results"] if step["check"] == "install_source_flow"
+    )
+    assert install_source["stdout_preview"] == "install_source=claude-code-plugin\n"
+
+    rollback = next(
+        step for step in artifact["step_results"] if step["check"] == "rollback_or_uninstall"
+    )
+    assert "partial-cleanup success" in rollback["stdout_preview"]
+    assert "full plugin uninstall blocked" in rollback["stdout_preview"]
+
+
 def test_pack12_client_release_boundary_artifact_is_not_promoted() -> None:
     artifact_path = (
         MONOREPO_ROOT
@@ -298,14 +342,20 @@ def test_pack12_client_release_boundary_artifact_is_not_promoted() -> None:
     assert artifact["artifact"] == "client-release-boundary"
     assert artifact["distribution"] == "eve-memory-client"
     assert artifact["prepared_version"] == "0.3.3"
-    assert artifact["published_version_blocking_smoke"] == "0.3.0"
-    assert artifact["status"] == "prepared_not_published"
+    assert artifact["published_version"] == "0.3.3"
+    assert artifact["previous_published_version_blocking_smoke"] == "0.3.0"
+    assert artifact["status"] == "published_verified_not_promoted"
     assert artifact["promotion_ready"] is False
-    assert artifact["local_preparation"]["release_tag_to_create_after_review"] == (
-        "eve-memory-client@0.3.3"
+    assert artifact["local_preparation"]["release_tag"] == "eve-memory-client@0.3.3"
+    assert artifact["release_publication"]["status"] == "published"
+    assert any(
+        "does not promote the Claude Code channel" in reason
+        for reason in artifact["not_promoted"]
     )
     assert any(
-        "does not publish the package" in reason for reason in artifact["not_promoted"]
+        "isolated uv tool install" in validation["command"]
+        and "0.3.3" in validation["result"]
+        for validation in artifact["validations"]
     )
 
 
