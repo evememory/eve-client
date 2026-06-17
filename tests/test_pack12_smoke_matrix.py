@@ -302,9 +302,19 @@ def test_active_pack12_remaining_smoke_matrix_tracks_all_remaining_channels() ->
             status in {"not_run", "blocked"} for status in channel["checks"].values()
         )
         assert "pass" not in set(channel["checks"].values())
+        assert "not_run" not in set(channel["checks"].values())
+        assert channel.get("blocked_by"), f"{channel_id} must explain its blocker"
 
     assert channels["install-button-cursor"]["checks"]["entry_url"] == "blocked"
     assert channels["install-button-vscode"]["checks"]["entry_url"] == "blocked"
+    assert "Cursor install-link helper" in channels["install-button-cursor"]["blocked_by"][0]
+    assert "VS Code code --add-mcp" in channels["install-button-vscode"]["blocked_by"][0]
+    assert "Gemini CLI extension package integrity" in channels["gemini-cli-extension"][
+        "blocked_by"
+    ][0]
+    assert "Cursor client registry provider" in channels["cursor"]["blocked_by"][0]
+    assert "VS Code client registry provider" in channels["vscode"]["blocked_by"][0]
+    assert "Windsurf client registry provider" in channels["windsurf"]["blocked_by"][0]
 
 
 def test_pack12_remaining_smoke_matrix_rejects_unknown_or_missing_remaining_channel(
