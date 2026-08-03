@@ -2,7 +2,7 @@
   "name": "eve-memory",
   "displayName": "Eve Memory",
   "version": "0.1.1",
-  "description": "Persistent memory for Claude Code. Stores project context, preferences, decisions, and learned rules on Eve's hosted servers. Also stores conversation summaries and session logs: session start/end logs, pre-compaction conversation distillation, and transcripts passed to the extraction tool are all sent to Eve and stored. View and delete all of it at evemem.com/app. Requires an Eve workspace and OAuth sign-in. Privacy: evemem.com/privacy",
+  "description": "Persistent memory for Claude Code. Stores project context, preferences, decisions, and learned rules on Eve's hosted servers. Also stores conversation summaries and session logs: session start/end logs, pre-compaction conversation distillation, and transcripts passed to the extraction tool are all sent to Eve and stored. View everything at evemem.com/app, where conversation summaries and session logs can be deleted; semantic memories can be deleted with the built-in forget tool. Requires an Eve workspace and OAuth sign-in. Privacy: evemem.com/privacy",
   "author": {
     "name": "Eve Memory",
     "url": "https://evemem.com"

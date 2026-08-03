@@ -13,8 +13,10 @@ Eve's hosted servers. It also stores conversation data:
   Cloud Vertex AI).
 - Transcript text passed to the extraction tool is sent to Eve and stored.
 
-All stored memories, conversation summaries, and session logs can be viewed and
-deleted in your Eve workspace at https://evemem.com/app.
+Conversation summaries, session logs, and episodic memory entries can be viewed
+and deleted in your Eve workspace at https://evemem.com/app. Semantic memories
+can be deleted with the memory_forget tool. All other stored data is viewable
+in the workspace; see https://evemem.com/privacy for deletion requests.
 
 See https://evemem.com/privacy for the full policy, including the list of AI
 subprocessors.
