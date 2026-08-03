@@ -115,7 +115,8 @@ async def memory_search(
     source_agent: str = "eve-mcp-local",
     visibility: str = "PERSONAL",
 ) -> str:
-    """Search memory using a natural language query.
+    """Search memory using a natural language query. The query text is sent to
+    Eve's servers to perform the search.
 
     Args:
         query: Natural language question or keywords
@@ -160,7 +161,10 @@ async def memory_store(
     confidence: float = 1.0,
     source_agent: str = "eve-mcp-local",
 ) -> str:
-    """Store a piece of knowledge into memory.
+    """Sends the supplied content to Eve's servers and stores it as a memory.
+    Stored data is viewable in your Eve workspace at evemem.com/app;
+    conversation records can be deleted there, and semantic memories with
+    the memory_forget tool.
 
     Args:
         text: Text content to remember
@@ -208,10 +212,13 @@ async def memory_extract(
     session_id: str | None = None,
     source_agent: str = "eve-mcp-local",
 ) -> str:
-    """Extract memorable facts, preferences, and events from transcript text.
+    """Sends transcript text to Eve's servers, where a third-party AI model
+    (Google Gemini) extracts facts, preferences, and events. The transcript
+    and the extracted memories are stored on Eve's servers. Stored data is
+    viewable in your Eve workspace at evemem.com/app; conversation records
+    can be deleted there, and semantic memories with the memory_forget tool.
 
-    Batch-processes transcript using AI classification. Optionally auto-stores
-    extracted items with dedup checking.
+    Optionally auto-stores extracted items with dedup checking.
 
     Args:
         transcript: Raw transcript text to extract memories from
@@ -249,8 +256,8 @@ async def memory_forget(
 ) -> str:
     """Soft-delete (retract) a semantic memory chunk by its chunk_id.
 
-    Sets retracted_at so the chunk is excluded from future searches
-    but preserved for audit purposes.
+    Sets retracted_at and valid_to so the chunk is excluded from future
+    searches but preserved for audit purposes.
 
     Args:
         chunk_id: UUID of the semantic chunk to forget
@@ -274,8 +281,7 @@ async def memory_update(
     source_agent: str = "eve-mcp-local",
 ) -> str:
     """Update an existing memory. If text changes, facts are re-extracted.
-
-    Only provided fields are updated; omitted fields keep existing values.
+    Only provided fields are updated; None fields keep existing values.
 
     Args:
         chunk_id: UUID of the semantic chunk to update
@@ -308,7 +314,9 @@ async def memory_session_start(
     details: dict[str, Any] | None = None,
     source_agent: str = "eve-mcp-local",
 ) -> str:
-    """Log the beginning of a conversation or work session.
+    """Records a session-start log on Eve's servers, including the session
+    summary and project metadata you pass. Stored until deleted; viewable and
+    deletable in your Eve workspace at evemem.com/app.
 
     Args:
         summary: Brief description of the session goal
@@ -342,7 +350,11 @@ async def memory_session_end(
     status: str | None = None,
     source_agent: str = "eve-mcp-local",
 ) -> str:
-    """Log the end of a session. Triggers the AI learning pipeline.
+    """Records a session-end log on Eve's servers, including a summary of the
+    session. Stored until deleted; viewable and deletable in your Eve
+    workspace at evemem.com/app.
+
+    Automatically triggers the AI learning and reflexion pipeline.
 
     Args:
         summary: Brief description of the outcome
@@ -376,9 +388,9 @@ async def memory_get_preferences(
     scope: str = "user",
     source_agent: str = "eve-mcp-local",
 ) -> str:
-    """Get stored preferences for a context.
-
-    Use at session start to load behavioral preferences.
+    """Get stored preferences for a context. Use at session start to load
+    behavioral preferences. The request is sent to Eve's servers to
+    retrieve stored preferences.
 
     Args:
         context: Context scope — personal, naya, or es
@@ -444,10 +456,11 @@ async def memory_ingest(
     predicate_allowlist: list[str] | None = None,
     source_agent: str = "eve-mcp-local",
 ) -> str:
-    """Start a batch ingestion job from a conversation export file.
-
-    Triggers asynchronous processing of an export file (ChatGPT, Claude,
-    Gemini, etc.) through the ingestion pipeline.
+    """Uploads a conversation export file to Eve's servers for batch
+    ingestion. Full conversation content is transmitted, stored, and
+    processed by a third-party AI model (Google Gemini). Stored content is
+    viewable in your Eve workspace at evemem.com/app and deletable with the
+    memory_forget tool.
 
     Args:
         file_path: Absolute path to the export file
@@ -486,10 +499,10 @@ async def memory_ingest_url(
     entity_refs: list[str] | None = None,
     source_agent: str = "eve-mcp-local",
 ) -> str:
-    """Ingest a web URL into memory.
-
-    Fetches the web page, extracts clean content, chunks it, and stores
-    each chunk. Full SSRF protection applied.
+    """Fetches the URL server-side and stores its content on Eve's servers as
+    memory. Stored content is viewable in your Eve workspace at
+    evemem.com/app and deletable with the memory_forget tool.
+    Full SSRF protection applied.
 
     Args:
         url: HTTPS URL to ingest
@@ -543,10 +556,14 @@ async def memory_pre_compact(
     context: str = "personal",
     source_agent: str = "eve-mcp-local",
 ) -> str:
-    """Distill raw conversation messages into memories before context compaction.
-
-    Extracts decisions, preferences, and learned patterns via AI.
-    Use when you have raw conversation text to process before compaction.
+    """Sends the raw conversation to Eve's servers before context compaction,
+    where a third-party AI model (Google Gemini) distills it into memories.
+    The conversation content and the resulting memories are stored on Eve's
+    servers. Stored data is viewable in your Eve workspace at evemem.com/app;
+    conversation records can be deleted there, and semantic memories with the
+    memory_forget tool. Applies per-session (max 3) and per-agent-hour
+    (max 30) rate limits. Skips if the same session+content hash was already
+    processed.
 
     Args:
         session_id: Current session UUID
