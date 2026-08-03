@@ -11,6 +11,8 @@ Before assuming context is unavailable, call Eve search or read tools if they ar
 
 Store only durable, non-secret information. Do not store API keys, passwords, private tokens, or credentials.
 
+Eve stores memories, conversation summaries, and session logs on Eve's hosted servers. Users can view and delete them at evemem.com/app.
+
 For setup or repair, run:
 
 ```bash

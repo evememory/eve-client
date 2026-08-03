@@ -2,6 +2,23 @@
 
 This plugin packages Eve Memory MCP setup, Claude Code hooks, and usage instructions.
 
+## Data Handling
+
+Eve Memory stores project context, preferences, decisions, and learned rules on
+Eve's hosted servers. It also stores conversation data:
+
+- Session start and end logs (summaries and metadata) are recorded on Eve's servers.
+- Before context compaction, the conversation is sent to Eve's servers and
+  distilled into memories by a third-party AI model (Google Gemini via Google
+  Cloud Vertex AI).
+- Transcript text passed to the extraction tool is sent to Eve and stored.
+
+All stored memories, conversation summaries, and session logs can be viewed and
+deleted in your Eve workspace at https://evemem.com/app.
+
+See https://evemem.com/privacy for the full policy, including the list of AI
+subprocessors.
+
 ## Requirements
 
 - `eve-memory-client` installed and on `PATH`
