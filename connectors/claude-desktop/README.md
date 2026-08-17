@@ -37,13 +37,13 @@ Do not submit to the Anthropic connector directory unless all of these pass:
 Suggested short description:
 
 ```text
-Eve Memory gives Claude a durable, user-owned memory layer across sessions and tools through a hosted MCP connector.
+Eve Memory gives Claude a durable, user-controlled memory layer across sessions and tools through a hosted MCP connector.
 ```
 
 Suggested long description:
 
 ```text
-Eve Memory is a managed memory service for AI agents. The Claude connector lets users store, search, and forget durable project context, preferences, and decisions through Eve's hosted MCP endpoint. Eve does not embed secrets in the connector package; users authenticate through Eve's approved hosted auth flow.
+Eve Memory is a managed memory service for AI agents. When a user asks Claude to save information, the connector stores that selected content and related metadata in the user's Eve tenant so it can be searched and reused across sessions and tools. Stored memories remain available until the user deletes them or a configured retention policy removes them. Users can search, update, and forget stored memories through Eve. Authentication uses Eve's hosted OAuth flow.
 ```
 
 ## MCPB Fallback
