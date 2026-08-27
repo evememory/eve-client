@@ -13,14 +13,25 @@
 - [x] Run the dry-run 0.3.5 release build and artifact checks.
 - [x] Record repository-wide Ruff baseline failures (213 lint errors; 72 files unformatted).
 - [x] Run diff-scoped Ruff lint and format verification (new files pass; two `cli.py` F401 findings match `origin/main`).
-- [ ] Run quality and security reviews and resolve accepted findings.
-- [ ] Run an isolated Hermes profile end-to-end test.
-- [ ] Merge the client branch.
-- [ ] Tag and publish `eve-memory-client@0.3.5`.
-- [ ] Verify the public package and document the release receipt.
+- [x] Run quality and security reviews and resolve accepted findings.
+- [x] Run an isolated Hermes profile end-to-end test.
+- [x] Merge the client branch.
+- [x] Tag and publish `eve-memory-client@0.3.5`.
+- [x] Verify the public package and document the release receipt.
 
 ## Review
 
 - Scope stays limited to one explicit Hermes profile.
 - No Auth0, GCP, YAML, token, or bulk-profile mutation is allowed.
 - Release is complete only after the public 0.3.5 package is verified.
+
+## Release receipt
+
+- Client commit: `93bc6bb8fd1a996a7280ed6ab140a7ada97f2fa3`.
+- Tag: `eve-memory-client@0.3.5`.
+- Workflow: <https://github.com/evememory/eve-client/actions/runs/33075121815>.
+- PyPI: <https://pypi.org/project/eve-memory-client/0.3.5/>.
+- Quality review: `0e4758e9-2b63-467e-91bd-3123e53b5685`.
+- Security review: `9d1f663f-a370-4124-807b-7aa48260ff5e`.
+- Live proof: Hermes OAuth, 15-tool discovery, verification, and a disposable
+  store-search-delete round trip passed.

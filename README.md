@@ -484,7 +484,8 @@ Build Python artifacts:
 uv build .
 ```
 
-The next release version prepared from this branch is `0.3.5`.
+The current release is `eve-memory-client` 0.3.5. See
+[`CHANGELOG.md`](CHANGELOG.md) for release details.
 
 Check build artifacts:
 

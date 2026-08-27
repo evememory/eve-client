@@ -36,11 +36,11 @@
 - Produces: `connect_hermes_profile(profile: str, mcp_base_url: str, server_name: str = "eve-memory") -> str`, returning `"added"` or `"reauthenticated"`.
 - Produces: `verify_hermes_profile(profile: str, mcp_base_url: str, server_name: str = "eve-memory") -> None`.
 
-- [ ] **Step 1: Write failing version and profile tests**
+- [x] **Step 1: Write failing version and profile tests**
 
 Add tests that assert the exact v0.20.5 output parses to `(0, 20, 5)`, an older version fails, missing or malformed profiles fail, and `team_1` is accepted.
 
-- [ ] **Step 2: Run the narrow tests and confirm failure**
+- [x] **Step 2: Run the narrow tests and confirm failure**
 
 Run:
 
@@ -50,14 +50,14 @@ uv run --with pytest python -m pytest tests/test_hermes.py -q
 
 Expected: collection fails because `eve_client.hermes` does not exist.
 
-- [ ] **Step 3: Add minimal validation and command helpers**
+- [x] **Step 3: Add minimal validation and command helpers**
 
 Implement the constants and public functions above. Use
 `shutil.which("hermes")`, `subprocess.run([...])`, and `json.loads`. Check the
 profile with `hermes profile show <profile>`. Read the MCP entry only through
 `hermes --profile <profile> config get mcp_servers.<server> --json`.
 
-- [ ] **Step 4: Add failing routing tests**
+- [x] **Step 4: Add failing routing tests**
 
 Mock `subprocess.run` and assert:
 
@@ -76,7 +76,7 @@ for an exact existing entry, and:
 
 for a missing entry. Assert a conflicting entry invokes neither mutation.
 
-- [ ] **Step 5: Implement minimal add, login, post-check, and test behavior**
+- [x] **Step 5: Implement minimal add, login, post-check, and test behavior**
 
 The profile-scoped add and login commands inherit the terminal. A non-zero
 exit raises `HermesIntegrationError`. After add or login, repeat the JSON entry
@@ -87,7 +87,7 @@ Verification invokes:
 ["hermes", "--profile", profile, "mcp", "test", server_name]
 ```
 
-- [ ] **Step 6: Run Task 1 tests**
+- [x] **Step 6: Run Task 1 tests**
 
 Run:
 
@@ -97,7 +97,7 @@ uv run --with pytest python -m pytest tests/test_hermes.py -q
 
 Expected: all Task 1 tests pass.
 
-- [ ] **Step 7: Commit Task 1**
+- [x] **Step 7: Commit Task 1**
 
 ```bash
 git add eve_client/hermes.py tests/test_hermes.py
@@ -116,14 +116,14 @@ git commit -m "feat: add Hermes profile OAuth boundary"
 - Produces: `eve connect --tool hermes --profile <name>`.
 - Produces: `eve verify --tool hermes --profile <name>`.
 
-- [ ] **Step 1: Write failing CLI tests**
+- [x] **Step 1: Write failing CLI tests**
 
 Add tests that prove `connect` and `verify` require `--profile`, only accept
 Hermes as the sole selected tool, call the Task 1 functions with the resolved
 MCP endpoint, and convert `HermesIntegrationError` to exit code 1 without a
 traceback or secret output.
 
-- [ ] **Step 2: Run the CLI tests and confirm failure**
+- [x] **Step 2: Run the CLI tests and confirm failure**
 
 Run:
 
@@ -134,7 +134,7 @@ uv run --with pytest python -m pytest tests/test_cli.py -q
 Expected: Hermes CLI cases fail because `--profile` and the Hermes branch are
 not implemented.
 
-- [ ] **Step 3: Add the explicit Hermes CLI branch**
+- [x] **Step 3: Add the explicit Hermes CLI branch**
 
 Add `profile: str | None = typer.Option(None, "--profile")` to `connect` and
 `verify`. Handle Hermes before the generic detector, plan, credential, and
@@ -145,14 +145,14 @@ authorization URL.
 Reject `hermes` in generic `install`, `repair`, and `uninstall` commands with a
 short instruction to use `eve connect --tool hermes --profile <name>`.
 
-- [ ] **Step 4: Document the supported path**
+- [x] **Step 4: Document the supported path**
 
 Add a Hermes section to `README.md` with the version floor, named-profile
 commands, OAuth ownership boundary, and upgrade command. State that existing
 profiles use fresh reauthentication and that users do not need a fixed client
 ID.
 
-- [ ] **Step 5: Run Task 2 tests**
+- [x] **Step 5: Run Task 2 tests**
 
 Run:
 
@@ -162,7 +162,7 @@ uv run --with pytest python -m pytest tests/test_cli.py tests/test_hermes.py -q
 
 Expected: all focused tests pass.
 
-- [ ] **Step 6: Commit Task 2**
+- [x] **Step 6: Commit Task 2**
 
 ```bash
 git add eve_client/cli.py tests/test_cli.py README.md
@@ -181,7 +181,7 @@ git commit -m "feat: support Hermes named profiles"
 - Produces: package and tag version `0.3.5`.
 - Produces: trusted-publishing tag `eve-memory-client@0.3.5`.
 
-- [ ] **Step 1: Write the release expectation**
+- [x] **Step 1: Write the release expectation**
 
 Change the distribution test expectation from `0.3.4` to `0.3.5`, then run:
 
@@ -192,13 +192,13 @@ uv run --with pytest python -m pytest \
 
 Expected: failure because `pyproject.toml` still reports 0.3.4.
 
-- [ ] **Step 2: Bump the package and documentation to 0.3.5**
+- [x] **Step 2: Bump the package and documentation to 0.3.5**
 
 Set `[project].version = "0.3.5"`. Update current release examples in the
 README. Do not change historical Pack 12 evidence that intentionally names
 0.3.3.
 
-- [ ] **Step 3: Run the complete automated test gate**
+- [x] **Step 3: Run the complete automated test gate**
 
 Run:
 
@@ -209,7 +209,7 @@ uv run --with pytest --with pytest-cov python -m pytest \
 
 Expected: zero failures and coverage reported.
 
-- [ ] **Step 4: Run formatting, lint, and release build checks**
+- [x] **Step 4: Run formatting, lint, and release build checks**
 
 Run:
 
@@ -222,20 +222,20 @@ bash scripts/publish-eve-client-pypi.sh --dry-run --dist-dir "$(mktemp -d)"
 Expected: all commands exit zero and the dry run contains one 0.3.5 wheel and
 one 0.3.5 source archive.
 
-- [ ] **Step 5: Run required reviews and accept fixes**
+- [x] **Step 5: Run required reviews and accept fixes**
 
 Run Council quality and security reviews against the complete diff. Run a Sol
 reviewer if Council is unavailable. Fix accepted findings and rerun affected
 tests. Record the successful Council run ID in the final commit trailer.
 
-- [ ] **Step 6: Run an isolated Hermes profile smoke test**
+- [x] **Step 6: Run an isolated Hermes profile smoke test**
 
 Use a disposable named profile. Install the built 0.3.5 wheel in an isolated
 environment, run `eve connect --tool hermes --profile <disposable-profile>`,
 complete browser authentication, then run `eve verify`. Confirm an Eve memory
 write/read/retract round trip. Record only sanitized outcomes.
 
-- [ ] **Step 7: Commit the release candidate**
+- [x] **Step 7: Commit the release candidate**
 
 ```bash
 git add pyproject.toml tests/test_distribution.py README.md tasks/todo.md \
@@ -250,14 +250,14 @@ Add:
 Council-Review: <successful-run-id>
 ```
 
-- [ ] **Step 8: Merge and publish**
+- [x] **Step 8: Merge and publish**
 
 Push the branch, merge it into `evememory/eve-client` main, and verify the
 exact merged SHA. Create and push the annotated tag
 `eve-memory-client@0.3.5` on that SHA. Wait for every release workflow job to
 pass.
 
-- [ ] **Step 9: Verify the public release**
+- [x] **Step 9: Verify the public release**
 
 Confirm PyPI returns version 0.3.5 with one wheel and one source archive, then
 run:
