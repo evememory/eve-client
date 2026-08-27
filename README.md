@@ -103,6 +103,12 @@ eve verify --tool hermes --profile work
 ```
 
 Existing profiles use fresh reauthentication when you run `eve connect` again.
+To upgrade Hermes itself, use its official updater:
+
+```bash
+hermes update
+```
+
 To upgrade the Eve client:
 
 ```bash

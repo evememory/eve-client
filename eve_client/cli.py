@@ -24,6 +24,7 @@ from eve_client.apply import apply_install_plan, rollback_transaction
 from eve_client.auth import CredentialStoreUnavailableError, LocalCredentialStore, OAuthSession
 from eve_client.channel_sources import normalize_install_source
 from eve_client.config import (
+    DEFAULT_MCP_BASE_URL,
     DEFAULT_UI_BASE_URL,
     get_importer_ledger_path,
     resolve_config,
@@ -129,15 +130,37 @@ def _reject_generic_hermes(raw_tools: str | list[str] | None) -> None:
         raise typer.Exit(1)
 
 
+def _hermes_failure_message(error: HermesIntegrationError, action: str) -> str:
+    """Map internal Hermes errors to safe, actionable text."""
+    detail = str(error).lower()
+    if "not installed" in detail or "not on path" in detail:
+        return "Install Hermes CLI and make sure it is on PATH."
+    if "0.20.5 or newer" in detail:
+        return "Upgrade Hermes CLI to version 0.20.5 or newer."
+    if "profile must" in detail:
+        return "Use a valid lowercase Hermes profile name."
+    if "conflicting" in detail:
+        return "Resolve the conflicting Hermes MCP entry, then connect again."
+    if "entry is missing" in detail:
+        return "Connect the Hermes profile first."
+    if "not enabled" in detail:
+        return "Enable the Hermes MCP entry, then verify again."
+    if "invalid mcp server" in detail or "invalid mcp server json" in detail:
+        return "Repair the Hermes MCP entry, then connect again."
+    if "command failed" in detail:
+        return "Check the Hermes CLI installation and try again."
+    return f"Hermes {action} failed. Check the Hermes CLI and profile."
+
+
 def _run_hermes_connect(config, profile: str | None, auth_mode: str | None) -> None:
     if profile is None:
         raise typer.BadParameter("--profile is required when --tool hermes is selected.")
     if auth_mode is not None and auth_mode.lower() != "oauth":
         raise typer.BadParameter("--auth-mode must be 'oauth' for Hermes.")
     try:
-        result = connect_hermes_profile(profile, config.mcp_base_url, config.mcp_server_name)
-    except HermesIntegrationError:
-        console.print("[yellow]Hermes connection failed; check the CLI and profile.[/yellow]")
+        result = connect_hermes_profile(profile, DEFAULT_MCP_BASE_URL, "eve-memory")
+    except HermesIntegrationError as exc:
+        console.print(f"[yellow]{_hermes_failure_message(exc, 'connection')}[/yellow]")
         raise typer.Exit(1)
     console.print(f"[green]Hermes profile connected.[/green] Profile: [bold]{profile}[/bold]")
     console.print(f"Result: [bold]{result}[/bold]")
@@ -149,9 +172,9 @@ def _run_hermes_verify(config, profile: str | None, auth_mode: str | None) -> No
     if auth_mode is not None and auth_mode.lower() != "oauth":
         raise typer.BadParameter("--auth-mode must be 'oauth' for Hermes.")
     try:
-        verify_hermes_profile(profile, config.mcp_base_url, config.mcp_server_name)
-    except HermesIntegrationError:
-        console.print("[yellow]Hermes verification failed; check the CLI and profile.[/yellow]")
+        verify_hermes_profile(profile, DEFAULT_MCP_BASE_URL, "eve-memory")
+    except HermesIntegrationError as exc:
+        console.print(f"[yellow]{_hermes_failure_message(exc, 'verification')}[/yellow]")
         raise typer.Exit(1)
     console.print(f"[green]Hermes verification succeeded.[/green] Profile: [bold]{profile}[/bold]")
 

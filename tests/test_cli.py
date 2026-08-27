@@ -10,6 +10,7 @@ from eve_client.auth import OAuthSession
 from eve_client.auth.local_store import LocalCredentialStore
 from eve_client.cli import app, doctor
 from eve_client.config import ResolvedConfig, resolve_config
+from eve_client.config import DEFAULT_MCP_BASE_URL
 from eve_client.hermes import HermesIntegrationError
 from eve_client.manifest import write_manifest
 from eve_client.models import ManifestRecord
@@ -42,9 +43,25 @@ def test_connect_hermes_calls_profile_flow_with_resolved_endpoint(tmp_path: Path
         )
 
     assert result.exit_code == 0
-    connect_hermes.assert_called_once_with("work", config.mcp_base_url, config.mcp_server_name)
+    connect_hermes.assert_called_once_with("work", DEFAULT_MCP_BASE_URL, "eve-memory")
     assert "work" in result.output
     assert "added" in result.output
+
+
+def test_connect_hermes_uses_official_endpoint_and_server_name(tmp_path: Path) -> None:
+    config = _resolved_config(tmp_path)
+    config.mcp_base_url = "https://stale.example/mcp"
+    config.mcp_server_name = "stale-name"
+    with (
+        patch("eve_client.cli.resolve_config", return_value=config),
+        patch("eve_client.cli.connect_hermes_profile", return_value="added") as connect_hermes,
+        patch("eve_client.cli._credential_store") as credential_store,
+    ):
+        result = runner.invoke(app, ["connect", "--tool", "hermes", "--profile", "work"])
+
+    assert result.exit_code == 0
+    connect_hermes.assert_called_once_with("work", DEFAULT_MCP_BASE_URL, "eve-memory")
+    credential_store.assert_not_called()
 
 
 def test_connect_hermes_requires_oauth_when_auth_mode_is_supplied() -> None:
@@ -91,8 +108,50 @@ def test_verify_hermes_calls_profile_flow_with_resolved_endpoint(tmp_path: Path)
         )
 
     assert result.exit_code == 0
-    verify_hermes.assert_called_once_with("work", config.mcp_base_url, config.mcp_server_name)
+    verify_hermes.assert_called_once_with("work", DEFAULT_MCP_BASE_URL, "eve-memory")
     assert "work" in result.output
+
+
+def test_verify_hermes_requires_profile_before_integration_call() -> None:
+    with patch("eve_client.cli.verify_hermes_profile") as verify_hermes:
+        result = runner.invoke(app, ["verify", "--tool", "hermes"])
+
+    assert result.exit_code != 0
+    assert "--profile" in result.output
+    verify_hermes.assert_not_called()
+
+
+def test_verify_hermes_uses_official_endpoint_and_server_name(tmp_path: Path) -> None:
+    config = _resolved_config(tmp_path)
+    config.mcp_base_url = "https://stale.example/mcp"
+    config.mcp_server_name = "stale-name"
+    with (
+        patch("eve_client.cli.resolve_config", return_value=config),
+        patch("eve_client.cli.verify_hermes_profile") as verify_hermes,
+        patch("eve_client.cli._credential_store") as credential_store,
+    ):
+        result = runner.invoke(app, ["verify", "--tool", "hermes", "--profile", "work"])
+
+    assert result.exit_code == 0
+    verify_hermes.assert_called_once_with("work", DEFAULT_MCP_BASE_URL, "eve-memory")
+    credential_store.assert_not_called()
+
+
+def test_verify_hermes_rejects_multiple_tools_and_non_oauth() -> None:
+    with patch("eve_client.cli.verify_hermes_profile") as verify_hermes:
+        mixed = runner.invoke(
+            app, ["verify", "--tool", "hermes,claude-code", "--profile", "work"]
+        )
+        non_oauth = runner.invoke(
+            app,
+            ["verify", "--tool", "hermes", "--profile", "work", "--auth-mode", "api-key"],
+        )
+
+    assert mixed.exit_code != 0
+    assert "only" in mixed.output.lower()
+    assert non_oauth.exit_code != 0
+    assert "oauth" in non_oauth.output
+    verify_hermes.assert_not_called()
 
 
 def test_verify_hermes_errors_are_safe_and_exit_one(tmp_path: Path) -> None:
@@ -113,6 +172,47 @@ def test_verify_hermes_errors_are_safe_and_exit_one(tmp_path: Path) -> None:
     assert "Traceback" not in result.output
     assert "authorization secret" not in result.output
     assert "Hermes" in result.output
+
+
+def test_hermes_failures_have_safe_actionable_messages(tmp_path: Path) -> None:
+    config = _resolved_config(tmp_path)
+    cases = {
+        "Hermes CLI is not installed or is not on PATH": "Install Hermes CLI",
+        "Hermes 0.20.5 or newer is required": "Upgrade Hermes",
+        "Hermes profile must start with a lowercase letter": "Use a valid lowercase Hermes profile",
+        "Hermes MCP server entry is conflicting": "Resolve the conflicting Hermes MCP entry",
+        "Hermes MCP server entry is missing": "Connect the Hermes profile first",
+        "Hermes MCP server entry is not enabled": "Enable the Hermes MCP entry",
+        "Hermes returned invalid MCP server JSON": "Repair the Hermes MCP entry",
+        "Hermes command failed: hermes mcp test": "Check the Hermes CLI installation",
+        "arbitrary token https://evil.example/callback?code=secret": "Hermes verification failed",
+    }
+    for error, expected in cases.items():
+        with (
+            patch("eve_client.cli.resolve_config", return_value=config),
+            patch("eve_client.cli.verify_hermes_profile", side_effect=HermesIntegrationError(error)),
+        ):
+            result = runner.invoke(app, ["verify", "--tool", "hermes", "--profile", "work"])
+        assert result.exit_code == 1
+        assert expected in result.output
+        assert "secret" not in result.output
+        assert "callback" not in result.output
+
+
+def test_connect_hermes_failure_is_safe(tmp_path: Path) -> None:
+    config = _resolved_config(tmp_path)
+    with (
+        patch("eve_client.cli.resolve_config", return_value=config),
+        patch(
+            "eve_client.cli.connect_hermes_profile",
+            side_effect=HermesIntegrationError("callback state token=secret"),
+        ),
+    ):
+        result = runner.invoke(app, ["connect", "--tool", "hermes", "--profile", "work"])
+
+    assert result.exit_code == 1
+    assert "Hermes connection failed" in result.output
+    assert "secret" not in result.output
 
 
 def test_generic_hermes_commands_direct_user_to_connect() -> None:
