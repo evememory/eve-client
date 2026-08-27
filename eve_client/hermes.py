@@ -31,13 +31,17 @@ def parse_hermes_version(output: str) -> tuple[int, int, int]:
 def validate_hermes_profile(profile: str | None) -> str:
     """Validate a Hermes profile name before placing it in a command argument."""
     if not isinstance(profile, str) or not _PROFILE_PATTERN.fullmatch(profile):
-        raise HermesIntegrationError("Hermes profile must contain only letters, numbers, or underscores")
+        raise HermesIntegrationError(
+            "Hermes profile must start with a lowercase letter or number and contain only lowercase letters, numbers, underscores, or hyphens"
+        )
     return profile
 
 
 def _require_hermes() -> None:
     if shutil.which("hermes") is None:
         raise HermesIntegrationError("Hermes CLI is not installed or is not on PATH")
+    result = _run_checked(["hermes", "--version"], capture_output=True)
+    parse_hermes_version(result.stdout)
 
 
 def _run_checked(args: list[str], *, capture_output: bool = False) -> subprocess.CompletedProcess[str]:
