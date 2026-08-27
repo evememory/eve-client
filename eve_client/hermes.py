@@ -6,6 +6,8 @@ import json
 import re
 import shutil
 import subprocess
+import sys
+from collections import deque
 from typing import Any
 
 MINIMUM_HERMES_VERSION = (0, 20, 5)
@@ -46,15 +48,57 @@ def _require_hermes() -> None:
 def _run_checked(
     args: list[str], *, capture_output: bool = False
 ) -> subprocess.CompletedProcess[str]:
-    result = subprocess.run(
-        args,
-        check=False,
-        text=True,
-        capture_output=capture_output,
-    )
+    try:
+        result = subprocess.run(
+            args,
+            check=False,
+            text=True,
+            capture_output=capture_output,
+        )
+    except OSError:
+        raise HermesIntegrationError(
+            f"Hermes command failed: {' '.join(args)}"
+        ) from None
     if result.returncode != 0:
         raise HermesIntegrationError(f"Hermes command failed: {' '.join(args)}")
     return result
+
+
+def _run_interactive(
+    args: list[str], required_markers: tuple[str, ...], *, all_markers: bool = True
+) -> None:
+    """Run an interactive Hermes command and require semantic success markers."""
+    marker_window = deque(maxlen=max(map(len, required_markers)))
+    markers_seen = [False] * len(required_markers)
+    try:
+        process = subprocess.Popen(
+            args,
+            stdin=None,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        if process.stdout is not None:
+            while True:
+                character = process.stdout.read(1)
+                if not character:
+                    break
+                sys.stdout.write(character)
+                sys.stdout.flush()
+                marker_window.append(character)
+                output_window = "".join(marker_window)
+                for index, marker in enumerate(required_markers):
+                    if marker in output_window:
+                        markers_seen[index] = True
+        returncode = process.wait()
+    except OSError:
+        raise HermesIntegrationError(
+            f"Hermes command failed: {' '.join(args)}"
+        ) from None
+
+    marker_match = all(markers_seen) if all_markers else any(markers_seen)
+    if returncode != 0 or not marker_match:
+        raise HermesIntegrationError(f"Hermes command failed: {' '.join(args)}")
 
 
 def _check_profile(profile: str) -> None:
@@ -62,22 +106,34 @@ def _check_profile(profile: str) -> None:
 
 
 def _read_mcp_entry(profile: str, server_name: str) -> dict[str, Any] | None:
-    result = subprocess.run(
-        [
-            "hermes",
-            "--profile",
-            profile,
-            "config",
-            "get",
-            f"mcp_servers.{server_name}",
-            "--json",
-        ],
-        check=False,
-        text=True,
-        capture_output=True,
-    )
+    args = [
+        "hermes",
+        "--profile",
+        profile,
+        "config",
+        "get",
+        f"mcp_servers.{server_name}",
+        "--json",
+    ]
+    try:
+        result = subprocess.run(
+            args,
+            check=False,
+            text=True,
+            capture_output=True,
+        )
+    except OSError:
+        raise HermesIntegrationError(
+            f"Hermes command failed: {' '.join(args)}"
+        ) from None
     if result.returncode != 0:
-        return None
+        combined_output = "\n".join(
+            part for part in (result.stdout or "", result.stderr or "") if part
+        ).strip()
+        missing_diagnostic = f"Config key not set: mcp_servers.{server_name}"
+        if result.returncode == 1 and combined_output == missing_diagnostic:
+            return None
+        raise HermesIntegrationError(f"Hermes command failed: {' '.join(args)}")
     try:
         entry = json.loads(result.stdout)
     except json.JSONDecodeError as exc:
@@ -117,7 +173,7 @@ def connect_hermes_profile(
     entry = _read_mcp_entry(profile, server_name)
 
     if entry is None:
-        _run_checked(
+        _run_interactive(
             [
                 "hermes",
                 "--profile",
@@ -129,11 +185,16 @@ def connect_hermes_profile(
                 mcp_base_url,
                 "--auth",
                 "oauth",
-            ]
+            ],
+            (f"Saved '{server_name}' to",),
         )
         result = "added"
     elif _entry_matches(entry, mcp_base_url):
-        _run_checked(["hermes", "--profile", profile, "mcp", "login", server_name])
+        _run_interactive(
+            ["hermes", "--profile", profile, "mcp", "login", server_name],
+            ("Authenticated —", "Authenticated (server reported no tools)"),
+            all_markers=False,
+        )
         result = "reauthenticated"
     else:
         raise HermesIntegrationError("Hermes MCP server entry is conflicting")
@@ -152,4 +213,7 @@ def verify_hermes_profile(
     _require_hermes()
     _check_profile(profile)
     _require_matching_entry(profile, mcp_base_url, server_name)
-    _run_checked(["hermes", "--profile", profile, "mcp", "test", server_name])
+    _run_interactive(
+        ["hermes", "--profile", profile, "mcp", "test", server_name],
+        ("Connected (", "Tools discovered:"),
+    )

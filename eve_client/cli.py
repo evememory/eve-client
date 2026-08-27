@@ -1807,6 +1807,10 @@ def verify(
     if "hermes" in selected_hermes_tools:
         if selected_hermes_tools != ["hermes"]:
             raise typer.BadParameter("Hermes must be the only selected tool.")
+        if json_output:
+            raise typer.BadParameter(
+                "Hermes verification is interactive and does not support --json."
+            )
         _run_hermes_verify(resolve_config(), profile, auth_mode)
         return
     config = resolve_config()

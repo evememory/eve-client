@@ -154,6 +154,23 @@ def test_verify_hermes_rejects_multiple_tools_and_non_oauth() -> None:
     verify_hermes.assert_not_called()
 
 
+def test_verify_hermes_rejects_json_output_contract(tmp_path: Path) -> None:
+    config = _resolved_config(tmp_path)
+    with (
+        patch("eve_client.cli.resolve_config", return_value=config),
+        patch("eve_client.cli.verify_hermes_profile") as verify_hermes,
+    ):
+        result = runner.invoke(
+            app,
+            ["verify", "--tool", "hermes", "--profile", "work", "--json"],
+        )
+
+    assert result.exit_code != 0
+    assert "json" in result.output.lower()
+    assert "interactive" in result.output.lower()
+    verify_hermes.assert_not_called()
+
+
 def test_verify_hermes_errors_are_safe_and_exit_one(tmp_path: Path) -> None:
     config = _resolved_config(tmp_path)
     with (
