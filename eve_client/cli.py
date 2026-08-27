@@ -147,6 +147,14 @@ def _hermes_failure_message(error: HermesIntegrationError, action: str) -> str:
         return "Enable the Hermes MCP entry, then verify again."
     if "invalid mcp server" in detail or "invalid mcp server json" in detail:
         return "Repair the Hermes MCP entry, then connect again."
+    if "profile show" in detail:
+        return "Check that the Hermes profile exists, then try again."
+    if "mcp add" in detail:
+        return "Check the Hermes MCP configuration, then try again."
+    if "mcp login" in detail:
+        return "Retry Hermes sign-in."
+    if "mcp test" in detail:
+        return "Check the Hermes MCP connection, then try again."
     if "command failed" in detail:
         return "Check the Hermes CLI installation and try again."
     return f"Hermes {action} failed. Check the Hermes CLI and profile."

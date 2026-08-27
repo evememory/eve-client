@@ -10,7 +10,6 @@ from eve_client.auth import OAuthSession
 from eve_client.auth.local_store import LocalCredentialStore
 from eve_client.cli import app, doctor
 from eve_client.config import ResolvedConfig, resolve_config
-from eve_client.config import DEFAULT_MCP_BASE_URL
 from eve_client.hermes import HermesIntegrationError
 from eve_client.manifest import write_manifest
 from eve_client.models import ManifestRecord
@@ -43,7 +42,7 @@ def test_connect_hermes_calls_profile_flow_with_resolved_endpoint(tmp_path: Path
         )
 
     assert result.exit_code == 0
-    connect_hermes.assert_called_once_with("work", DEFAULT_MCP_BASE_URL, "eve-memory")
+    connect_hermes.assert_called_once_with("work", "https://mcp.evemem.com/mcp", "eve-memory")
     assert "work" in result.output
     assert "added" in result.output
 
@@ -60,7 +59,7 @@ def test_connect_hermes_uses_official_endpoint_and_server_name(tmp_path: Path) -
         result = runner.invoke(app, ["connect", "--tool", "hermes", "--profile", "work"])
 
     assert result.exit_code == 0
-    connect_hermes.assert_called_once_with("work", DEFAULT_MCP_BASE_URL, "eve-memory")
+    connect_hermes.assert_called_once_with("work", "https://mcp.evemem.com/mcp", "eve-memory")
     credential_store.assert_not_called()
 
 
@@ -108,7 +107,7 @@ def test_verify_hermes_calls_profile_flow_with_resolved_endpoint(tmp_path: Path)
         )
 
     assert result.exit_code == 0
-    verify_hermes.assert_called_once_with("work", DEFAULT_MCP_BASE_URL, "eve-memory")
+    verify_hermes.assert_called_once_with("work", "https://mcp.evemem.com/mcp", "eve-memory")
     assert "work" in result.output
 
 
@@ -133,7 +132,7 @@ def test_verify_hermes_uses_official_endpoint_and_server_name(tmp_path: Path) ->
         result = runner.invoke(app, ["verify", "--tool", "hermes", "--profile", "work"])
 
     assert result.exit_code == 0
-    verify_hermes.assert_called_once_with("work", DEFAULT_MCP_BASE_URL, "eve-memory")
+    verify_hermes.assert_called_once_with("work", "https://mcp.evemem.com/mcp", "eve-memory")
     credential_store.assert_not_called()
 
 
@@ -184,7 +183,10 @@ def test_hermes_failures_have_safe_actionable_messages(tmp_path: Path) -> None:
         "Hermes MCP server entry is missing": "Connect the Hermes profile first",
         "Hermes MCP server entry is not enabled": "Enable the Hermes MCP entry",
         "Hermes returned invalid MCP server JSON": "Repair the Hermes MCP entry",
-        "Hermes command failed: hermes mcp test": "Check the Hermes CLI installation",
+        "Hermes command failed: hermes profile show work": "Check that the Hermes profile exists",
+        "Hermes command failed: hermes --profile work mcp add eve-memory": "Check the Hermes MCP configuration",
+        "Hermes command failed: hermes --profile work mcp login eve-memory": "Retry Hermes sign-in",
+        "Hermes command failed: hermes --profile work mcp test eve-memory": "Check the Hermes MCP connection",
         "arbitrary token https://evil.example/callback?code=secret": "Hermes verification failed",
     }
     for error, expected in cases.items():
@@ -197,6 +199,8 @@ def test_hermes_failures_have_safe_actionable_messages(tmp_path: Path) -> None:
         assert expected in result.output
         assert "secret" not in result.output
         assert "callback" not in result.output
+        assert "work" not in result.output
+        assert "eve-memory" not in result.output
 
 
 def test_connect_hermes_failure_is_safe(tmp_path: Path) -> None:
