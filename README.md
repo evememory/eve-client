@@ -484,7 +484,7 @@ Build Python artifacts:
 uv build .
 ```
 
-The next release version prepared from this branch is `0.3.3`.
+The next release version prepared from this branch is `0.3.5`.
 
 Check build artifacts:
 
@@ -499,7 +499,7 @@ bash scripts/build-eve-client-release.sh
 ```
 
 Release tags for the PyPI distribution use `eve-memory-client@<version>`, for
-example `eve-memory-client@0.3.3`.
+example `eve-memory-client@0.3.5`.
 
 ## License
 
