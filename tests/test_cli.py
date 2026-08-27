@@ -10,6 +10,7 @@ from eve_client.auth import OAuthSession
 from eve_client.auth.local_store import LocalCredentialStore
 from eve_client.cli import app, doctor
 from eve_client.config import ResolvedConfig, resolve_config
+from eve_client.hermes import HermesIntegrationError
 from eve_client.manifest import write_manifest
 from eve_client.models import ManifestRecord
 from eve_client.state_binding import store_sequence_watermark
@@ -18,6 +19,110 @@ from keyring.errors import KeyringError
 from typer.testing import CliRunner
 
 runner = CliRunner()
+
+
+def test_connect_hermes_requires_profile_before_integration_call() -> None:
+    with patch("eve_client.cli.connect_hermes_profile") as connect_hermes:
+        result = runner.invoke(app, ["connect", "--tool", "hermes"])
+
+    assert result.exit_code != 0
+    assert "--profile" in result.output
+    connect_hermes.assert_not_called()
+
+
+def test_connect_hermes_calls_profile_flow_with_resolved_endpoint(tmp_path: Path) -> None:
+    config = _resolved_config(tmp_path)
+    with (
+        patch("eve_client.cli.resolve_config", return_value=config),
+        patch("eve_client.cli.connect_hermes_profile", return_value="added") as connect_hermes,
+    ):
+        result = runner.invoke(
+            app,
+            ["connect", "--tool", "hermes", "--profile", "work"],
+        )
+
+    assert result.exit_code == 0
+    connect_hermes.assert_called_once_with("work", config.mcp_base_url, config.mcp_server_name)
+    assert "work" in result.output
+    assert "added" in result.output
+
+
+def test_connect_hermes_requires_oauth_when_auth_mode_is_supplied() -> None:
+    with patch("eve_client.cli.connect_hermes_profile") as connect_hermes:
+        result = runner.invoke(
+            app,
+            [
+                "connect",
+                "--tool",
+                "hermes",
+                "--profile",
+                "work",
+                "--auth-mode",
+                "api-key",
+            ],
+        )
+
+    assert result.exit_code != 0
+    assert "oauth" in result.output
+    connect_hermes.assert_not_called()
+
+
+def test_connect_hermes_rejects_multiple_tools() -> None:
+    with patch("eve_client.cli.connect_hermes_profile") as connect_hermes:
+        result = runner.invoke(
+            app,
+            ["connect", "--tool", "hermes,claude-code", "--profile", "work"],
+        )
+
+    assert result.exit_code != 0
+    assert "only" in result.output.lower() or "sole" in result.output.lower()
+    connect_hermes.assert_not_called()
+
+
+def test_verify_hermes_calls_profile_flow_with_resolved_endpoint(tmp_path: Path) -> None:
+    config = _resolved_config(tmp_path)
+    with (
+        patch("eve_client.cli.resolve_config", return_value=config),
+        patch("eve_client.cli.verify_hermes_profile") as verify_hermes,
+    ):
+        result = runner.invoke(
+            app,
+            ["verify", "--tool", "hermes", "--profile", "work"],
+        )
+
+    assert result.exit_code == 0
+    verify_hermes.assert_called_once_with("work", config.mcp_base_url, config.mcp_server_name)
+    assert "work" in result.output
+
+
+def test_verify_hermes_errors_are_safe_and_exit_one(tmp_path: Path) -> None:
+    config = _resolved_config(tmp_path)
+    with (
+        patch("eve_client.cli.resolve_config", return_value=config),
+        patch(
+            "eve_client.cli.verify_hermes_profile",
+            side_effect=HermesIntegrationError("authorization secret should not print"),
+        ),
+    ):
+        result = runner.invoke(
+            app,
+            ["verify", "--tool", "hermes", "--profile", "work"],
+        )
+
+    assert result.exit_code == 1
+    assert "Traceback" not in result.output
+    assert "authorization secret" not in result.output
+    assert "Hermes" in result.output
+
+
+def test_generic_hermes_commands_direct_user_to_connect() -> None:
+    for command in ("install", "repair", "uninstall"):
+        args = [command, "--tool", "hermes"]
+        if command == "uninstall":
+            args.append("--yes")
+        result = runner.invoke(app, args)
+        assert result.exit_code != 0
+        assert "eve connect --tool hermes --profile" in result.output
 
 
 def _resolved_config(

@@ -39,6 +39,11 @@ from eve_client.importer import (
 )
 from eve_client.importer import get_adapter as get_import_adapter
 from eve_client.importer.models import ImportSourceType
+from eve_client.hermes import (
+    HermesIntegrationError,
+    connect_hermes_profile,
+    verify_hermes_profile,
+)
 from eve_client.integrations import get_adapter
 from eve_client.lock import (
     InstallerLockUnsupportedPlatformError,
@@ -106,6 +111,49 @@ def _parse_tools(raw_tools: list[str] | None) -> list[str] | None:
         parsed.extend(part.strip() for part in value.split(",") if part.strip())
     valid = [tool for tool in parsed if tool in ALL_TOOLS]
     return valid or None
+
+
+def _hermes_tools(raw_tools: str | list[str] | None) -> list[str]:
+    if raw_tools is None:
+        return []
+    values = [raw_tools] if isinstance(raw_tools, str) else raw_tools
+    return [part.strip().lower() for value in values for part in value.split(",") if part.strip()]
+
+
+def _reject_generic_hermes(raw_tools: str | list[str] | None) -> None:
+    if "hermes" in _hermes_tools(raw_tools):
+        console.print(
+            "[yellow]Hermes is profile-scoped. Use `eve connect --tool hermes "
+            "--profile <name>`. [/yellow]"
+        )
+        raise typer.Exit(1)
+
+
+def _run_hermes_connect(config, profile: str | None, auth_mode: str | None) -> None:
+    if profile is None:
+        raise typer.BadParameter("--profile is required when --tool hermes is selected.")
+    if auth_mode is not None and auth_mode.lower() != "oauth":
+        raise typer.BadParameter("--auth-mode must be 'oauth' for Hermes.")
+    try:
+        result = connect_hermes_profile(profile, config.mcp_base_url, config.mcp_server_name)
+    except HermesIntegrationError:
+        console.print("[yellow]Hermes connection failed; check the CLI and profile.[/yellow]")
+        raise typer.Exit(1)
+    console.print(f"[green]Hermes profile connected.[/green] Profile: [bold]{profile}[/bold]")
+    console.print(f"Result: [bold]{result}[/bold]")
+
+
+def _run_hermes_verify(config, profile: str | None, auth_mode: str | None) -> None:
+    if profile is None:
+        raise typer.BadParameter("--profile is required when --tool hermes is selected.")
+    if auth_mode is not None and auth_mode.lower() != "oauth":
+        raise typer.BadParameter("--auth-mode must be 'oauth' for Hermes.")
+    try:
+        verify_hermes_profile(profile, config.mcp_base_url, config.mcp_server_name)
+    except HermesIntegrationError:
+        console.print("[yellow]Hermes verification failed; check the CLI and profile.[/yellow]")
+        raise typer.Exit(1)
+    console.print(f"[green]Hermes verification succeeded.[/green] Profile: [bold]{profile}[/bold]")
 
 
 def _normalize_import_source(value: str) -> ImportSourceType:
@@ -1074,6 +1122,7 @@ def quickstart(
 @app.command()
 def connect(
     tool: str | None = typer.Option(None, "--tool", "-t"),
+    profile: str | None = typer.Option(None, "--profile"),
     api_key: str | None = typer.Option(None, "--api-key"),
     bearer_token: str | None = typer.Option(None, "--bearer-token"),
     auth_mode: str | None = typer.Option(None, "--auth-mode"),
@@ -1086,6 +1135,12 @@ def connect(
     yes: bool = typer.Option(False, "--yes", help="Confirm apply without additional prompt"),
 ) -> None:
     """Guided connection flow for the best supported tool on this machine."""
+    selected_hermes_tools = _hermes_tools(tool)
+    if "hermes" in selected_hermes_tools:
+        if selected_hermes_tools != ["hermes"]:
+            raise typer.BadParameter("Hermes must be the only selected tool.")
+        _run_hermes_connect(resolve_config(), profile, auth_mode)
+        return
     config = resolve_config()
     resolved_install_source = _resolve_install_source(config, install_source)
     detected_tool, tool_plan, selected_auth_mode = _select_auth_candidate(
@@ -1264,6 +1319,7 @@ def install(
     yes: bool = typer.Option(False, "--yes", help="Confirm apply without additional prompt"),
 ) -> None:
     """Generate or apply an Eve installation plan."""
+    _reject_generic_hermes(tool)
     if all_tools and tool:
         raise typer.BadParameter("Use either --tool or --all, not both.")
     if non_interactive and not dry_run and not yes:
@@ -1704,10 +1760,17 @@ def doctor(
 @app.command()
 def verify(
     tool: list[str] | None = typer.Option(None, "--tool", "-t"),
+    profile: str | None = typer.Option(None, "--profile"),
     json_output: bool = typer.Option(False, "--json"),
     auth_mode: str | None = typer.Option(None, "--auth-mode"),
 ) -> None:
     """Verify local Eve integration state and live MCP connectivity."""
+    selected_hermes_tools = _hermes_tools(tool)
+    if "hermes" in selected_hermes_tools:
+        if selected_hermes_tools != ["hermes"]:
+            raise typer.BadParameter("Hermes must be the only selected tool.")
+        _run_hermes_verify(resolve_config(), profile, auth_mode)
+        return
     config = resolve_config()
     _, detected = _resolve_detected_tools(config, raw_tools=tool)
     selected_tools = _parse_tools(tool)
@@ -1775,6 +1838,7 @@ def repair(
     allow_file_fallback: bool = typer.Option(False, "--allow-file-fallback"),
 ) -> None:
     """Repair supported Eve-managed tool integrations."""
+    _reject_generic_hermes(tool)
     config = resolve_config()
     selected_tools, detected = _resolve_detected_tools(config, raw_tools=tool, project=project)
     if selected_tools == ["gemini-cli"]:
@@ -1856,6 +1920,7 @@ def uninstall(
     yes: bool = typer.Option(False, "--yes", help="Confirm uninstall without additional prompt"),
 ) -> None:
     """Remove Eve-managed config, companion files, and stored credentials for selected tools."""
+    _reject_generic_hermes(tool)
     config = resolve_config()
     selected_tools = _parse_tools(tool)
     if not selected_tools:

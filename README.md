@@ -82,6 +82,35 @@ See [`examples/`](./examples/) for manual MCP config snippets (no installer need
 For distribution-channel status across Claude, Codex, ChatGPT, Gemini, Cursor,
 VS Code, and Windsurf, see [`CHANNELS.md`](./CHANNELS.md).
 
+## Hermes CLI
+
+Eve supports profile-scoped Hermes connections with Hermes **0.20.5 or newer**.
+Hermes owns the OAuth browser flow, profile configuration, and stored session.
+The Eve client does not store Hermes credentials and does not require a fixed
+client ID.
+
+Connect or reauthenticate a named Hermes profile:
+
+```bash
+eve connect --tool hermes --profile work
+```
+
+Verify that the profile points to the Eve MCP endpoint and that Hermes can
+reach it:
+
+```bash
+eve verify --tool hermes --profile work
+```
+
+Existing profiles use fresh reauthentication when you run `eve connect` again.
+To upgrade the Eve client:
+
+```bash
+uv tool upgrade eve-memory-client
+```
+
+If you installed with pipx, use `pipx upgrade eve-memory-client` instead.
+
 ## Install
 
 Before installing the client, get an Eve workspace:
