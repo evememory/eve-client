@@ -5,6 +5,9 @@ from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from unittest.mock import patch
 
+from keyring.errors import KeyringError
+from typer.testing import CliRunner
+
 from eve_client._version import __version__
 from eve_client.auth import OAuthSession
 from eve_client.auth.local_store import LocalCredentialStore
@@ -15,8 +18,6 @@ from eve_client.manifest import write_manifest
 from eve_client.models import ManifestRecord
 from eve_client.state_binding import store_sequence_watermark
 from eve_client.transaction_state import write_transaction_state
-from keyring.errors import KeyringError
-from typer.testing import CliRunner
 
 runner = CliRunner()
 

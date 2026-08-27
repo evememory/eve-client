@@ -8,7 +8,6 @@ import shutil
 import subprocess
 from typing import Any
 
-
 MINIMUM_HERMES_VERSION = (0, 20, 5)
 _PROFILE_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]{0,63}$")
 
@@ -44,7 +43,9 @@ def _require_hermes() -> None:
     parse_hermes_version(result.stdout)
 
 
-def _run_checked(args: list[str], *, capture_output: bool = False) -> subprocess.CompletedProcess[str]:
+def _run_checked(
+    args: list[str], *, capture_output: bool = False
+) -> subprocess.CompletedProcess[str]:
     result = subprocess.run(
         args,
         check=False,
@@ -62,7 +63,15 @@ def _check_profile(profile: str) -> None:
 
 def _read_mcp_entry(profile: str, server_name: str) -> dict[str, Any] | None:
     result = subprocess.run(
-        ["hermes", "--profile", profile, "config", "get", f"mcp_servers.{server_name}", "--json"],
+        [
+            "hermes",
+            "--profile",
+            profile,
+            "config",
+            "get",
+            f"mcp_servers.{server_name}",
+            "--json",
+        ],
         check=False,
         text=True,
         capture_output=True,
@@ -110,8 +119,16 @@ def connect_hermes_profile(
     if entry is None:
         _run_checked(
             [
-                "hermes", "--profile", profile, "mcp", "add", server_name,
-                "--url", mcp_base_url, "--auth", "oauth",
+                "hermes",
+                "--profile",
+                profile,
+                "mcp",
+                "add",
+                server_name,
+                "--url",
+                mcp_base_url,
+                "--auth",
+                "oauth",
             ]
         )
         result = "added"

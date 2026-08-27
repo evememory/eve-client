@@ -21,7 +21,11 @@ from rich.table import Table
 
 from eve_client._version import __version__
 from eve_client.apply import apply_install_plan, rollback_transaction
-from eve_client.auth import CredentialStoreUnavailableError, LocalCredentialStore, OAuthSession
+from eve_client.auth import (
+    CredentialStoreUnavailableError,
+    LocalCredentialStore,
+    OAuthSession,
+)
 from eve_client.channel_sources import normalize_install_source
 from eve_client.config import (
     DEFAULT_MCP_BASE_URL,
@@ -31,6 +35,11 @@ from eve_client.config import (
     update_local_config,
 )
 from eve_client.detect import ALL_TOOLS, detect_tools
+from eve_client.hermes import (
+    HermesIntegrationError,
+    connect_hermes_profile,
+    verify_hermes_profile,
+)
 from eve_client.importer import (
     ImportLedger,
     ImportUploadError,
@@ -40,11 +49,6 @@ from eve_client.importer import (
 )
 from eve_client.importer import get_adapter as get_import_adapter
 from eve_client.importer.models import ImportSourceType
-from eve_client.hermes import (
-    HermesIntegrationError,
-    connect_hermes_profile,
-    verify_hermes_profile,
-)
 from eve_client.integrations import get_adapter
 from eve_client.lock import (
     InstallerLockUnsupportedPlatformError,
@@ -61,7 +65,10 @@ from eve_client.oauth_device import (
 )
 from eve_client.plan import build_install_plan, feature_enabled
 from eve_client.recovery import reinitialize_trust_state
-from eve_client.tool_state import classify_codex_disabled_state, classify_codex_local_state
+from eve_client.tool_state import (
+    classify_codex_disabled_state,
+    classify_codex_local_state,
+)
 from eve_client.transaction_state import load_transaction_state
 from eve_client.uninstall import UninstallError, uninstall_tools
 from eve_client.verify import verify_tools
