@@ -8,7 +8,11 @@
 - [x] Implement the Hermes runtime boundary with TDD.
 - [x] Wire `connect` and `verify` with TDD.
 - [x] Update documentation and package version to 0.3.5.
-- [x] Run the full test, coverage, lint, format, and build gates.
+- [x] Run the complete automated test suite.
+- [x] Confirm total test coverage is 82%.
+- [x] Run the dry-run 0.3.5 release build and artifact checks.
+- [x] Record repository-wide Ruff baseline failures (213 lint errors; 72 files unformatted).
+- [ ] Run diff-scoped Ruff lint and format verification.
 - [ ] Run quality and security reviews and resolve accepted findings.
 - [ ] Run an isolated Hermes profile end-to-end test.
 - [ ] Merge the client branch.
