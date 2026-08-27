@@ -12,7 +12,7 @@
 - [x] Confirm total test coverage is 82%.
 - [x] Run the dry-run 0.3.5 release build and artifact checks.
 - [x] Record repository-wide Ruff baseline failures (213 lint errors; 72 files unformatted).
-- [ ] Run diff-scoped Ruff lint and format verification.
+- [x] Run diff-scoped Ruff lint and format verification (new files pass; two `cli.py` F401 findings match `origin/main`).
 - [ ] Run quality and security reviews and resolve accepted findings.
 - [ ] Run an isolated Hermes profile end-to-end test.
 - [ ] Merge the client branch.
