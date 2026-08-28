@@ -86,9 +86,16 @@ def test_built_wheel_contains_expected_runtime_files(tmp_path: Path) -> None:
 
     assert "eve_client/__main__.py" in names
     assert "eve_client/cli.py" in names
+    assert "eve_client/hermes_provider/__init__.py" in names
+    assert "eve_client/hermes_provider/provider.py" in names
+    assert "eve_client/hermes_provider/transport.py" in names
     assert "eve_client/tests/test_cli.py" not in names
     assert f"Name: {PYPI_DISTRIBUTION}" in metadata
     assert "eve = eve_client.cli:main" in entry_points
+    assert (
+        "[hermes_agent.memory_providers]\n"
+        "eve = eve_client.hermes_provider:register"
+    ) in entry_points
     assert f"Version: {package_version}" in metadata
 
 

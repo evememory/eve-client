@@ -85,11 +85,31 @@ VS Code, and Windsurf, see [`CHANNELS.md`](./CHANNELS.md).
 ## Hermes CLI
 
 Eve supports profile-scoped Hermes connections with Hermes **0.20.5 or newer**.
-Hermes owns the OAuth browser flow, profile configuration, and stored session.
-The Eve client does not store Hermes credentials and does not require a fixed
-client ID.
+Hermes supports two separate Eve memory paths.
 
-Connect or reauthenticate a named Hermes profile:
+### Native Eve memory provider
+
+Install `eve-memory-client` into the same Python environment that runs Hermes:
+
+```bash
+<hermes-python> -m pip install eve-memory-client
+```
+
+Configure the active named profile:
+
+```bash
+hermes --profile work memory setup
+```
+
+Select `eve` when prompted. Hermes stores `EVE_API_KEY` in that profile's
+secret environment. It stores other Eve values in that profile's `eve.json`.
+The native provider gives bounded automatic recall, pre-compaction memory
+processing, and end-of-session extraction. It exposes no model-callable Eve
+tools.
+
+### Existing Eve MCP connector
+
+Connect or reauthenticate a named Hermes profile with the existing OAuth path:
 
 ```bash
 eve connect --tool hermes --profile work
@@ -101,6 +121,14 @@ reach it:
 ```bash
 eve verify --tool hermes --profile work
 ```
+
+This is the OAuth path for explicit Eve MCP tools. The native provider and MCP
+connector do not share credentials. Neither path replaces the other.
+
+| Purpose | Setup | Authentication | Model tools |
+| --- | --- | --- | --- |
+| Native Eve memory provider | `hermes --profile work memory setup` | `EVE_API_KEY` in the profile secret environment | None |
+| Existing Eve MCP connector | `eve connect --tool hermes --profile work` | Hermes-managed OAuth session | Explicit Eve MCP tools |
 
 Existing profiles use fresh reauthentication when you run `eve connect` again.
 To upgrade Hermes itself, use its official updater:

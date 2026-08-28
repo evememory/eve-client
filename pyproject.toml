@@ -42,6 +42,9 @@ eve-claude-hook = "eve_client.claude_hooks:main"
 eve-gemini-hook = "eve_client.gemini_hooks:main"
 eve-mcp-server = "eve_client.server:main"
 
+[project.entry-points."hermes_agent.memory_providers"]
+eve = "eve_client.hermes_provider:register"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
