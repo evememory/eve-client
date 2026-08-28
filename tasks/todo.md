@@ -6,8 +6,8 @@
   `mcp>=2,<3`.
 - [x] Advance the distribution version expectation to 0.3.8.
 - [x] Run the artifact and clean-install gates.
-- [ ] Complete the full test and coverage gate (the local runner stopped before
-  producing a summary or coverage result).
+- [x] Complete the full test and coverage gate: 668 passed, 7 skipped, 84%
+  coverage.
 
 ## Review
 
