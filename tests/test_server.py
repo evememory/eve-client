@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 
 import pytest
@@ -94,7 +93,6 @@ async def test_installed_stdio_server_preserves_sdk_1_contract_without_credentia
     home.mkdir()
     state_home.mkdir()
     environment = {
-        **os.environ,
         "HOME": str(home),
         "XDG_STATE_HOME": str(state_home),
         "PYTHON_KEYRING_BACKEND": "keyring.backends.null.Keyring",
