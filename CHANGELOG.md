@@ -2,6 +2,37 @@
 
 This file records notable changes to `eve-memory-client`.
 
+## [0.3.6] - 2026-08-28
+
+### Added
+
+- Added the native Eve memory provider for Hermes Agent.
+- Added package entry-point discovery through
+  `hermes_agent.memory_providers`.
+- Added bounded automatic recall, pre-compaction preservation, and session-end
+  extraction.
+
+### Safety and reliability
+
+- Kept native-provider API-key setup separate from the existing Hermes MCP
+  OAuth connector.
+- Limited automatic recall and writes to the primary Hermes agent context.
+- Scoped asynchronous recall to the current session and generation.
+- Added bounded HTTP timeouts, a 1 MiB response limit, and no automatic retry
+  loop.
+
+### Verification
+
+- Passed 660 tests with 7 skipped and 83% total coverage.
+- Verified provider discovery with Hermes 0.20.5.
+- Verified setup from the built wheel in a disposable Hermes profile.
+
+### Release references
+
+- [Git tag](https://github.com/evememory/eve-client/releases/tag/eve-memory-client%400.3.6)
+- [PyPI package](https://pypi.org/project/eve-memory-client/0.3.6/)
+- [Hermes setup](README.md#hermes-cli)
+
 ## [0.3.5] - 2026-08-27
 
 ### Added

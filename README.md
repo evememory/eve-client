@@ -512,7 +512,7 @@ Build Python artifacts:
 uv build .
 ```
 
-The current release is `eve-memory-client` 0.3.5. See
+The current release is `eve-memory-client` 0.3.6. See
 [`CHANGELOG.md`](CHANGELOG.md) for release details.
 
 Check build artifacts:
@@ -528,7 +528,7 @@ bash scripts/build-eve-client-release.sh
 ```
 
 Release tags for the PyPI distribution use `eve-memory-client@<version>`, for
-example `eve-memory-client@0.3.5`.
+example `eve-memory-client@0.3.6`.
 
 ## License
 

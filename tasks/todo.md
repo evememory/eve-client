@@ -1,3 +1,24 @@
+# Hermes native memory provider and 0.3.6 release
+
+- [x] Freeze the adapter scope against Hermes 0.20.5 and Eve MCP contracts.
+- [x] Implement the provider through the official Hermes entry-point contract.
+- [x] Keep native API-key setup separate from the existing MCP OAuth path.
+- [x] Add unit, transport, discovery, distribution, and lifecycle tests.
+- [x] Verify the built wheel in a disposable Hermes profile.
+- [x] Complete independent code-quality and security reviews.
+- [x] Run the final 0.3.6 test, coverage, build, and artifact gates.
+- [ ] Merge the adapter into client `main`.
+- [ ] Tag and publish `eve-memory-client@0.3.6`.
+- [ ] Verify the public package and record the release receipt.
+
+## Review
+
+- Scope is limited to the native Hermes Eve adapter.
+- Hermes core and the existing Eve MCP OAuth path remain unchanged.
+- Release is complete only after the exact public 0.3.6 package is verified.
+
+---
+
 # Hermes profile OAuth and 0.3.5 release
 
 - [x] Confirm affected Hermes version is 0.20.5.
