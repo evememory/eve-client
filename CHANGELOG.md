@@ -2,6 +2,20 @@
 
 This file records notable changes to `eve-memory-client`.
 
+## [0.3.9] - 2026-08-28
+
+### Fixed
+
+- Replaced the native Hermes provider's fixed two-second session-end timeout
+  with `session_end_timeout_seconds` in the profile-local `eve.json`.
+- Set a 20-second default with a validated 5–30 second range and derive the
+  shutdown join allowance from both ordered session-end operations.
+
+### Compatibility
+
+- Kept behavioral settings out of the secret environment. `EVE_API_KEY`
+  remains the only Eve environment value required by the native provider.
+
 ## [0.3.8] - 2026-08-28
 
 ### Changed

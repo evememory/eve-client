@@ -107,6 +107,9 @@ hermes --profile work memory setup
 
 Select `eve` when prompted. Hermes stores `EVE_API_KEY` in that profile's
 secret environment. It stores other Eve values in that profile's `eve.json`.
+`session_end_timeout_seconds` defaults to 20 seconds and accepts values from 5
+through 30. It is a behavioral setting in `eve.json`, not an environment
+variable.
 The native provider gives bounded automatic recall, pre-compaction memory
 processing, and end-of-session extraction. It exposes no model-callable Eve
 tools.
@@ -516,7 +519,7 @@ Build Python artifacts:
 uv build .
 ```
 
-The current release is `eve-memory-client` 0.3.8. See
+The current release is `eve-memory-client` 0.3.9. See
 [`CHANGELOG.md`](CHANGELOG.md) for release details.
 
 Check build artifacts:
@@ -532,7 +535,7 @@ bash scripts/build-eve-client-release.sh
 ```
 
 Release tags for the PyPI distribution use `eve-memory-client@<version>`, for
-example `eve-memory-client@0.3.8`.
+example `eve-memory-client@0.3.9`.
 
 ## License
 

@@ -53,6 +53,7 @@ sys.modules.setdefault("agent", agent_module)
 sys.modules.setdefault("agent.memory_provider", memory_provider_module)
 sys.modules.setdefault("agent.secret_scope", secret_scope_module)
 
+from eve_client.hermes_provider import provider as provider_module
 from eve_client.hermes_provider.provider import EveMemoryProvider, register
 
 
@@ -365,15 +366,26 @@ def test_session_end_extracts_buffer_then_records_redacted_metadata_once() -> No
     assert list(provider._turn_buffer) == []
 
 
-def test_session_end_uses_two_second_timeout_for_both_calls_even_with_fifteen_second_config() -> None:
-    # Break caught: session end can spend the configured request timeout twice before Hermes shuts down.
+def test_session_end_uses_its_configured_timeout_for_both_calls() -> None:
+    # Break caught: session end ignores its dedicated operation timeout.
     transport = _RecordingTransport([{}, {}])
     provider = _active_provider(transport)
-    provider._config["request_timeout_seconds"] = 15
+    provider._config["session_end_timeout_seconds"] = 17
 
     provider.on_session_end()
 
-    assert transport.timeout_overrides == [httpx.Timeout(2), httpx.Timeout(2)]
+    assert transport.timeout_overrides == [httpx.Timeout(17), httpx.Timeout(17)]
+
+
+@pytest.mark.parametrize(
+    ("timeout_seconds", "expected"),
+    [(5, 11), (20, 41), (30, 61)],
+)
+def test_session_end_join_allowance_is_two_operation_budgets_plus_one_second(
+    timeout_seconds: float, expected: float
+) -> None:
+    # Break caught: Hermes shutdown has a separate fixed join setting.
+    assert provider_module._session_end_join_seconds(timeout_seconds) == expected
 
 
 def test_session_end_returns_after_bounded_join_and_abandons_a_new_session_while_worker_is_alive(
@@ -396,7 +408,7 @@ def test_session_end_returns_after_bounded_join_and_abandons_a_new_session_while
             assert release.wait(1)
             return {}
 
-    monkeypatch.setattr("eve_client.hermes_provider.provider._SESSION_END_JOIN_SECONDS", 0.01)
+    monkeypatch.setattr(provider_module, "_session_end_join_seconds", lambda _: 0.01)
     transport = BlockingTransport()
     provider = _active_provider(transport)
     provider.sync_turn("old user", "old assistant")
@@ -460,7 +472,7 @@ def test_shutdown_does_not_join_a_blocked_session_end_worker(monkeypatch: pytest
             assert release.wait(1)
             return {}
 
-    monkeypatch.setattr("eve_client.hermes_provider.provider._SESSION_END_JOIN_SECONDS", 0.01)
+    monkeypatch.setattr(provider_module, "_session_end_join_seconds", lambda _: 0.01)
     provider = _active_provider(BlockingTransport())
 
     provider.on_session_end()
@@ -513,7 +525,7 @@ def test_session_end_zero_messages_and_both_failures_remain_ordered_and_redacted
     assert [name for name, _ in transport.calls] == ["memory_extract", "memory_session_end"]
     assert transport.calls[0][1]["transcript"] == ""
     assert transport.calls[1][1]["details"] == {"message_count": 0}
-    assert transport.timeout_overrides == [httpx.Timeout(2), httpx.Timeout(2)]
+    assert transport.timeout_overrides == [httpx.Timeout(20), httpx.Timeout(20)]
     assert "Eve Hermes extraction failed" in caplog.text
     assert "Eve Hermes session end failed" in caplog.text
     assert "secret from" not in caplog.text
@@ -611,6 +623,7 @@ def test_returns_exact_config_schema() -> None:
         {"key": "recall_limit", "description": "Maximum recalled memories", "type": "integer", "default": 5, "minimum": 1, "maximum": 20},
         {"key": "min_similarity", "description": "Minimum recall similarity", "type": "number", "default": 0.7, "minimum": 0, "maximum": 1},
         {"key": "request_timeout_seconds", "description": "Eve request timeout in seconds", "type": "number", "default": 5, "minimum": 1, "maximum": 15},
+        {"key": "session_end_timeout_seconds", "description": "Eve session-end timeout in seconds", "type": "number", "default": 20, "minimum": 5, "maximum": 30},
     ]
 
 
@@ -643,6 +656,8 @@ def test_save_config_is_profile_local_atomic_private_and_preserves_recognized_va
         {"recall_limit": True},
         {"min_similarity": 1.1},
         {"request_timeout_seconds": 16},
+        {"session_end_timeout_seconds": 4},
+        {"session_end_timeout_seconds": 31},
     ],
 )
 def test_save_config_rejects_invalid_values_before_replacing_file(tmp_path: Path, values: dict[str, Any]) -> None:
@@ -677,6 +692,7 @@ def test_save_config_normalizes_official_terminal_setup_values(tmp_path: Path) -
             "recall_limit": "5",
             "min_similarity": "0.7",
             "request_timeout_seconds": "5",
+            "session_end_timeout_seconds": "20.0",
         },
         str(tmp_path),
     )
@@ -686,6 +702,7 @@ def test_save_config_normalizes_official_terminal_setup_values(tmp_path: Path) -
         "recall_limit": 5,
         "min_similarity": 0.7,
         "request_timeout_seconds": 5.0,
+        "session_end_timeout_seconds": 20.0,
     }
 
 
@@ -698,6 +715,7 @@ def test_save_config_normalizes_official_terminal_setup_values(tmp_path: Path) -
         {"recall_limit": "05"},
         {"min_similarity": "NaN"},
         {"request_timeout_seconds": "Infinity"},
+        {"session_end_timeout_seconds": " 20"},
     ],
 )
 def test_save_config_rejects_ambiguous_or_noncanonical_setup_strings(

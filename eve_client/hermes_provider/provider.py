@@ -13,12 +13,11 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-
 from agent.memory_provider import MemoryProvider
 from agent.secret_scope import get_secret
+
 from eve_client.atomic import atomic_write
 from eve_client.hermes_provider.transport import EveMcpTransport
-
 
 _ENDPOINT = "https://mcp.evemem.com/mcp"
 _CONFIG_FILE = "eve.json"
@@ -28,6 +27,7 @@ _DEFAULT_CONFIG = {
     "recall_limit": 5,
     "min_similarity": 0.7,
     "request_timeout_seconds": 5,
+    "session_end_timeout_seconds": 20,
 }
 _CONFIG_KEYS = frozenset(_DEFAULT_CONFIG)
 _INTEGER_TEXT = re.compile(r"^-?(?:0|[1-9][0-9]*)$")
@@ -45,9 +45,12 @@ _MAX_SESSION_TRANSCRIPT_BYTES = (
     + (_MAX_BUFFER_MESSAGES - 1)
 )
 _ENDED_SESSION_LIMIT = 100
-_SESSION_END_TIMEOUT_SECONDS = 2
-_SESSION_END_JOIN_SECONDS = 4.0
+_SESSION_END_JOIN_MARGIN_SECONDS = 1.0
 _LOGGER = logging.getLogger(__name__)
+
+
+def _session_end_join_seconds(operation_timeout_seconds: float) -> float:
+    return operation_timeout_seconds * 2 + _SESSION_END_JOIN_MARGIN_SECONDS
 
 
 def _truncate_utf8(value: str, maximum: int) -> str:
@@ -106,7 +109,11 @@ def _normalize_setup_values(values: Mapping[str, Any]) -> dict[str, Any]:
             if not _INTEGER_TEXT.fullmatch(value):
                 raise ValueError("Invalid Eve configuration")
             normalized[key] = int(value, 10)
-        elif key in {"min_similarity", "request_timeout_seconds"}:
+        elif key in {
+            "min_similarity",
+            "request_timeout_seconds",
+            "session_end_timeout_seconds",
+        }:
             if not _DECIMAL_TEXT.fullmatch(value):
                 raise ValueError("Invalid Eve configuration")
             normalized[key] = float(value)
@@ -135,6 +142,7 @@ def _validate_config(values: Mapping[str, Any]) -> dict[str, Any]:
     for key, lower, upper in (
         ("min_similarity", 0, 1),
         ("request_timeout_seconds", 1, 15),
+        ("session_end_timeout_seconds", 5, 30),
     ):
         value = config[key]
         if isinstance(value, bool) or not isinstance(value, (int, float)) or not lower <= value <= upper:
@@ -199,6 +207,7 @@ class EveMemoryProvider(MemoryProvider):
             {"key": "recall_limit", "description": "Maximum recalled memories", "type": "integer", "default": 5, "minimum": 1, "maximum": 20},
             {"key": "min_similarity", "description": "Minimum recall similarity", "type": "number", "default": 0.7, "minimum": 0, "maximum": 1},
             {"key": "request_timeout_seconds", "description": "Eve request timeout in seconds", "type": "number", "default": 5, "minimum": 1, "maximum": 15},
+            {"key": "session_end_timeout_seconds", "description": "Eve session-end timeout in seconds", "type": "number", "default": 20, "minimum": 5, "maximum": 30},
         ]
 
     def save_config(self, values: dict[str, Any], hermes_home: str) -> None:
@@ -470,6 +479,7 @@ class EveMemoryProvider(MemoryProvider):
             else:
                 transport = self._transport
                 context = self._config["context"]
+                session_end_timeout_seconds = self._config["session_end_timeout_seconds"]
                 details: dict[str, Any] = {"message_count": len(buffered) * 2}
                 for key, value in (
                     ("platform", self._platform),
@@ -482,7 +492,14 @@ class EveMemoryProvider(MemoryProvider):
                 transcript = _transcript_from_turns(buffered)
                 worker = threading.Thread(
                     target=self._run_session_end,
-                    args=(transport, session_id, context, details, transcript),
+                    args=(
+                        transport,
+                        session_id,
+                        context,
+                        session_end_timeout_seconds,
+                        details,
+                        transcript,
+                    ),
                     daemon=True,
                 )
                 self._session_end_worker = worker
@@ -490,7 +507,7 @@ class EveMemoryProvider(MemoryProvider):
         if warning_required:
             _LOGGER.warning("Eve Hermes session end did not finish before shutdown")
             return
-        worker.join(_SESSION_END_JOIN_SECONDS)
+        worker.join(_session_end_join_seconds(session_end_timeout_seconds))
         if worker.is_alive():
             _LOGGER.warning("Eve Hermes session end did not finish before shutdown")
 
@@ -499,14 +516,16 @@ class EveMemoryProvider(MemoryProvider):
         transport: EveMcpTransport,
         session_id: str,
         context: str,
+        session_end_timeout_seconds: float,
         details: dict[str, Any],
         transcript: str,
     ) -> None:
+        operation_timeout = httpx.Timeout(session_end_timeout_seconds)
         try:
             transport.call_tool(
                 "memory_extract",
                 {"transcript": transcript, "source": "hermes_agent", "source_agent": "hermes_agent", "session_id": session_id, "auto_store": True, "context": context, "min_importance": 5, "use_extraction": True},
-                timeout_override=httpx.Timeout(_SESSION_END_TIMEOUT_SECONDS),
+                timeout_override=operation_timeout,
             )
         except Exception:
             _LOGGER.warning("Eve Hermes extraction failed")
@@ -514,7 +533,7 @@ class EveMemoryProvider(MemoryProvider):
             transport.call_tool(
                 "memory_session_end",
                 {"summary": f"Hermes session ended after {details['message_count']} messages.", "source_agent": "hermes_agent", "session_id": session_id, "context": context, "details": details, "status": "unknown"},
-                timeout_override=httpx.Timeout(_SESSION_END_TIMEOUT_SECONDS),
+                timeout_override=operation_timeout,
             )
         except Exception:
             _LOGGER.warning("Eve Hermes session end failed")
