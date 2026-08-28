@@ -6,9 +6,9 @@
 - [x] Keep the legacy MCP SDK in the optional `server` extra.
 - [x] Run the complete test, coverage, build, and artifact gates.
 - [x] Complete an independent secondary Codex review.
-- [ ] Tag and publish `eve-memory-client@0.3.7`.
-- [ ] Restore Hermes MCP 2.0 and install the public Eve 0.3.7 package.
-- [ ] Verify Hermes provider discovery without changing the active profile.
+- [x] Tag and publish `eve-memory-client@0.3.7`.
+- [x] Restore Hermes MCP 2.0 and install the public Eve 0.3.7 package.
+- [x] Verify Hermes provider discovery without changing the active profile.
 
 ## Review
 
@@ -16,6 +16,21 @@
 - The hosted Eve MCP endpoint and native Hermes provider behavior do not change.
 - The local `eve-mcp-server` bridge stays on MCP SDK 1.x until its separate
   migration is approved and implemented.
+
+## Release receipt
+
+- Client release commit: `252671cdd7029243f02dd22df9ab658f691f458c`.
+- Tag: `eve-memory-client@0.3.7`.
+- Workflow: <https://github.com/evememory/eve-client/actions/runs/33163549288>.
+- GitHub release: <https://github.com/evememory/eve-client/releases/tag/eve-memory-client%400.3.7>.
+- PyPI: <https://pypi.org/project/eve-memory-client/0.3.7/>.
+- Verification: 662 passed, 7 skipped, and 83% total coverage.
+- Public package proof: a fresh PyPI install returned `eve version` as `0.3.7`.
+- Hermes proof: Eve 0.3.7 and MCP 2.0.0 are installed together. Hermes MCP
+  imports use `httpx2`, dependency checks pass, and Eve provider discovery
+  passes without changing the active profile.
+- Review: the independent secondary Codex review approved the exact release
+  candidate with no findings.
 
 ---
 

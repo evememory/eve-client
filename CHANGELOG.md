@@ -26,9 +26,9 @@ This file records notable changes to `eve-memory-client`.
 
 ### Release references
 
-- Git tag: `eve-memory-client@0.3.7` (pending)
-- PyPI: `eve-memory-client` 0.3.7 (pending)
-- Release workflow: pending
+- [Git tag](https://github.com/evememory/eve-client/releases/tag/eve-memory-client%400.3.7)
+- [PyPI package](https://pypi.org/project/eve-memory-client/0.3.7/)
+- [Release workflow](https://github.com/evememory/eve-client/actions/runs/33163549288)
 
 ## [0.3.6] - 2026-08-28
 
