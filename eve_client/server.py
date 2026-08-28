@@ -14,10 +14,13 @@ import json
 import os
 from typing import Any
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 
-mcp = FastMCP(
+from eve_client._version import __version__
+
+mcp = MCPServer(
     "eve-memory",
+    version=__version__,
     instructions=(
         "Persistent memory infrastructure for AI agents. "
         "Search, store, and manage durable knowledge "

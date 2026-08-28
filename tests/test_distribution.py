@@ -117,7 +117,7 @@ def test_built_wheel_keeps_mcp_out_of_base_dependencies(tmp_path: Path) -> None:
     base_requirements = [requirement for requirement in requirements if ";" not in requirement]
 
     assert not any(requirement.startswith("mcp") for requirement in base_requirements)
-    assert "mcp<2,>=1.20; extra == 'server'" in requirements
+    assert "mcp<3,>=2; extra == 'server'" in requirements
 
 
 def test_built_sdist_contains_readme_and_package_sources(tmp_path: Path) -> None:
