@@ -8,11 +8,31 @@
 - [x] Run the artifact and clean-install gates.
 - [x] Complete the full test and coverage gate: 668 passed, 7 skipped, 84%
   coverage.
+- [x] Complete independent secondary Codex quality and security approval.
+- [x] Tag and publish `eve-memory-client@0.3.8`.
+- [x] Verify the public package and release artifacts.
 
 ## Review
 
 - Scope is limited to the optional local bridge and its package release record.
-- Publication, tags, workflows, and remote systems are not part of this task.
+- Only the client release records changed; hosted Eve, Hermes, OAuth, and native
+  provider behavior did not change.
+
+## Release receipt
+
+- Client release commit: `00c14b7f0175e6e8a929c9e7824223495f947872`.
+- Tag: `eve-memory-client@0.3.8`.
+- Workflow: <https://github.com/evememory/eve-client/actions/runs/33188234177>.
+- GitHub release: <https://github.com/evememory/eve-client/releases/tag/eve-memory-client%400.3.8>.
+- PyPI: <https://pypi.org/project/eve-memory-client/0.3.8/>.
+- Verification: 668 passed, 7 skipped, and 84% coverage.
+- Public package proof: a fresh PyPI install returned `eve version` as `0.3.8`.
+- Public wheel SHA-256: `c9f92a68a68e96dc7014fce50cf7415337342db8e20c88c33ffdca719a137e45`.
+- Dependency proof: MCP is absent from base dependencies and only the `server`
+  extra declares `mcp<3,>=2; extra == 'server'`.
+- Bridge proof: modern and legacy stdio `tools/list` returned 13 tools, and a
+  local `tools/call` returned `authentication_required` without network access.
+- Review: independent secondary Codex quality and security approvals were clean.
 
 # Hermes MCP dependency correction and 0.3.7 release
 
