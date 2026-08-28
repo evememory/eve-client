@@ -96,7 +96,8 @@ Install `eve-memory-client` into the same Python environment that runs Hermes:
 ```
 
 The base client does not install or replace the host application's MCP Python
-SDK. The optional local `eve-mcp-server` bridge remains in the `server` extra.
+SDK. The optional local `eve-mcp-server` bridge uses MCP SDK 2 through the
+`server` extra.
 
 Configure the active named profile:
 
@@ -515,7 +516,7 @@ Build Python artifacts:
 uv build .
 ```
 
-The current release is `eve-memory-client` 0.3.7. See
+The current release is `eve-memory-client` 0.3.8. See
 [`CHANGELOG.md`](CHANGELOG.md) for release details.
 
 Check build artifacts:
@@ -531,7 +532,7 @@ bash scripts/build-eve-client-release.sh
 ```
 
 Release tags for the PyPI distribution use `eve-memory-client@<version>`, for
-example `eve-memory-client@0.3.7`.
+example `eve-memory-client@0.3.8`.
 
 ## License
 

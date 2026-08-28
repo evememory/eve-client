@@ -2,6 +2,20 @@
 
 This file records notable changes to `eve-memory-client`.
 
+## [0.3.8] - 2026-08-28
+
+### Changed
+
+- Migrated the optional local `eve-mcp-server` bridge to MCP SDK 2 through the
+  `server` extra (`mcp>=2,<3`).
+- Kept MCP out of the base package dependencies, so base installs do not
+  install or replace a host MCP SDK.
+
+### Verification
+
+- Release artifact dry run and clean base-wheel and `[server]` installation
+  proofs are recorded in the Task 3 report.
+
 ## [0.3.7] - 2026-08-28
 
 ### Fixed

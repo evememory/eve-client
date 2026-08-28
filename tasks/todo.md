@@ -1,3 +1,19 @@
+# MCP SDK 2 local bridge and 0.3.8 release
+
+- [x] Define SDK 2 bridge behavior for modern and legacy client modes.
+- [x] Migrate only the optional local `eve-mcp-server` bridge to MCP SDK 2.
+- [x] Keep MCP out of base dependencies and constrain the `server` extra to
+  `mcp>=2,<3`.
+- [x] Advance the distribution version expectation to 0.3.8.
+- [x] Run the artifact and clean-install gates.
+- [ ] Complete the full test and coverage gate (the local runner stopped before
+  producing a summary or coverage result).
+
+## Review
+
+- Scope is limited to the optional local bridge and its package release record.
+- Publication, tags, workflows, and remote systems are not part of this task.
+
 # Hermes MCP dependency correction and 0.3.7 release
 
 - [x] Reproduce the Hermes MCP SDK downgrade from the 0.3.6 base package.
