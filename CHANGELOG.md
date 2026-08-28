@@ -2,6 +2,34 @@
 
 This file records notable changes to `eve-memory-client`.
 
+## [0.3.7] - 2026-08-28
+
+### Fixed
+
+- Removed the legacy MCP Python SDK from the base package dependencies. A base
+  install no longer replaces the MCP SDK supplied by Hermes.
+- Kept `mcp>=1.20,<2` in the optional `server` extra for the local
+  `eve-mcp-server` bridge. Its SDK 2 migration is a separate change.
+
+### Compatibility
+
+- The native Hermes memory provider and the base Eve CLI do not require the MCP
+  Python SDK.
+- The hosted Eve MCP endpoint and Hermes OAuth connector are unchanged.
+
+### Verification
+
+- Passed 662 tests with 7 skipped and 83% total coverage.
+- Verified that installing the base 0.3.7 wheel into an environment with
+  `mcp==2.0.0` keeps MCP at version 2.0.0.
+- Passed the release artifact build and package checks.
+
+### Release references
+
+- Git tag: `eve-memory-client@0.3.7` (pending)
+- PyPI: `eve-memory-client` 0.3.7 (pending)
+- Release workflow: pending
+
 ## [0.3.6] - 2026-08-28
 
 ### Added

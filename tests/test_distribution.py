@@ -49,7 +49,7 @@ def _package_version() -> str:
 
 
 def test_pack12_release_version_advances_beyond_published_0_3_0() -> None:
-    assert _package_version() == "0.3.6"
+    assert _package_version() == "0.3.7"
 
 
 def _write_fake_uv(bin_dir: Path, installed_bin_dir: Path, command_log: Path) -> None:
@@ -99,6 +99,27 @@ def test_built_wheel_contains_expected_runtime_files(tmp_path: Path) -> None:
     assert f"Version: {package_version}" in metadata
 
 
+def test_built_wheel_keeps_mcp_out_of_base_dependencies(tmp_path: Path) -> None:
+    """Base installs must not replace the host application's MCP SDK."""
+    dist_dir = tmp_path / "dist"
+    _run("uv", "build", str(PACKAGE_ROOT), "--out-dir", str(dist_dir))
+    wheel_path = next(dist_dir.glob(f"{DIST_FILE_PREFIX}-*.whl"))
+
+    with zipfile.ZipFile(wheel_path) as wheel:
+        dist_info = f"{DIST_FILE_PREFIX}-{_package_version()}.dist-info"
+        metadata = wheel.read(f"{dist_info}/METADATA").decode("utf-8")
+
+    requirements = [
+        line.removeprefix("Requires-Dist: ")
+        for line in metadata.splitlines()
+        if line.startswith("Requires-Dist: ")
+    ]
+    base_requirements = [requirement for requirement in requirements if ";" not in requirement]
+
+    assert not any(requirement.startswith("mcp") for requirement in base_requirements)
+    assert "mcp<2,>=1.20; extra == 'server'" in requirements
+
+
 def test_built_sdist_contains_readme_and_package_sources(tmp_path: Path) -> None:
     dist_dir = tmp_path / "dist"
     _run("uv", "build", str(PACKAGE_ROOT), "--out-dir", str(dist_dir))
@@ -133,7 +154,7 @@ def test_installed_wheel_exposes_eve_entrypoint_and_module_entrypoint(tmp_path: 
     assert module_result.stdout.strip() == expected
 
 
-def test_installed_wheel_imports_all_default_console_script_modules_in_isolated_venv(
+def test_installed_wheel_imports_base_console_script_modules_in_isolated_venv(
     tmp_path: Path,
 ) -> None:
     dist_dir = tmp_path / "dist"
@@ -150,7 +171,35 @@ def test_installed_wheel_imports_all_default_console_script_modules_in_isolated_
         str(venv_python),
         "-c",
         "import eve_client.cli; import eve_client.claude_hooks; "
-        "import eve_client.gemini_hooks; import eve_client.server; print('ok')",
+        "import eve_client.gemini_hooks; print('ok')",
+        cwd=tmp_path,
+    )
+
+    assert result.stdout.strip() == "ok"
+
+
+def test_installed_wheel_server_extra_imports_server_module(tmp_path: Path) -> None:
+    dist_dir = tmp_path / "dist"
+    _run("uv", "build", str(PACKAGE_ROOT), "--out-dir", str(dist_dir))
+    wheel_path = next(dist_dir.glob(f"{DIST_FILE_PREFIX}-*.whl"))
+
+    venv_dir = tmp_path / "venv"
+    venv.EnvBuilder(with_pip=True).create(venv_dir)
+    venv_python = venv_dir / "bin" / "python"
+
+    _run(
+        str(venv_python),
+        "-m",
+        "pip",
+        "install",
+        f"{wheel_path}[server]",
+        cwd=tmp_path,
+    )
+
+    result = _run(
+        str(venv_python),
+        "-c",
+        "import eve_client.server; print('ok')",
         cwd=tmp_path,
     )
 

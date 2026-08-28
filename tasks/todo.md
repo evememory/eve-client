@@ -1,3 +1,24 @@
+# Hermes MCP dependency correction and 0.3.7 release
+
+- [x] Reproduce the Hermes MCP SDK downgrade from the 0.3.6 base package.
+- [x] Add a failing wheel-metadata regression test.
+- [x] Remove the MCP SDK from base dependencies.
+- [x] Keep the legacy MCP SDK in the optional `server` extra.
+- [x] Run the complete test, coverage, build, and artifact gates.
+- [x] Complete an independent secondary Codex review.
+- [ ] Tag and publish `eve-memory-client@0.3.7`.
+- [ ] Restore Hermes MCP 2.0 and install the public Eve 0.3.7 package.
+- [ ] Verify Hermes provider discovery without changing the active profile.
+
+## Review
+
+- Scope is limited to the package dependency correction.
+- The hosted Eve MCP endpoint and native Hermes provider behavior do not change.
+- The local `eve-mcp-server` bridge stays on MCP SDK 1.x until its separate
+  migration is approved and implemented.
+
+---
+
 # Hermes native memory provider and 0.3.6 release
 
 - [x] Freeze the adapter scope against Hermes 0.20.5 and Eve MCP contracts.
