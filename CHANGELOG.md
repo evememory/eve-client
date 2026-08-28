@@ -31,6 +31,7 @@ This file records notable changes to `eve-memory-client`.
 
 - [Git tag](https://github.com/evememory/eve-client/releases/tag/eve-memory-client%400.3.6)
 - [PyPI package](https://pypi.org/project/eve-memory-client/0.3.6/)
+- [Release workflow](https://github.com/evememory/eve-client/actions/runs/33162000017)
 - [Hermes setup](README.md#hermes-cli)
 
 ## [0.3.5] - 2026-08-27

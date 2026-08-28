@@ -7,15 +7,31 @@
 - [x] Verify the built wheel in a disposable Hermes profile.
 - [x] Complete independent code-quality and security reviews.
 - [x] Run the final 0.3.6 test, coverage, build, and artifact gates.
-- [ ] Merge the adapter into client `main`.
-- [ ] Tag and publish `eve-memory-client@0.3.6`.
-- [ ] Verify the public package and record the release receipt.
+- [x] Merge the adapter into client `main`.
+- [x] Tag and publish `eve-memory-client@0.3.6`.
+- [x] Verify the public package and record the release receipt.
 
 ## Review
 
 - Scope is limited to the native Hermes Eve adapter.
 - Hermes core and the existing Eve MCP OAuth path remain unchanged.
 - Release is complete only after the exact public 0.3.6 package is verified.
+
+## Release receipt
+
+- Client commit: `66d45d973a19180680f4eab58264b5d0f0ab609f`.
+- Tag: `eve-memory-client@0.3.6`.
+- Workflow: <https://github.com/evememory/eve-client/actions/runs/33162000017>.
+- GitHub release: <https://github.com/evememory/eve-client/releases/tag/eve-memory-client%400.3.6>.
+- PyPI: <https://pypi.org/project/eve-memory-client/0.3.6/>.
+- Verification: 660 passed, 7 skipped, and 83% total coverage. Provider
+  coverage is 96%; transport coverage is 97%.
+- Package proof: the public package returned `eve version` as `0.3.6`.
+- Hermes proof: official 0.20.5 discovery and built-wheel setup in a disposable
+  profile passed.
+- Review: independent code-quality and security review approved the adapter;
+  the final secondary Codex release review approved the corrected release
+  metadata and documentation.
 
 ---
 
