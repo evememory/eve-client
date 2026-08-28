@@ -23,7 +23,7 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/pytest-tmp"
           chmod 700 "$RUNNER_TEMP/pytest-tmp"
-          NO_COLOR=1 TERM=dumb TMPDIR="$RUNNER_TEMP/pytest-tmp" uv run --with pytest --with pytest-cov pytest --cov=eve_client --cov-report=term-missing -q tests
+          NO_COLOR=1 TERM=dumb TMPDIR="$RUNNER_TEMP/pytest-tmp" uv run --with pytest --with pytest-cov --with 'mcp>=2,<3' pytest --cov=eve_client --cov-report=term-missing -q tests
 
   build-python:
     needs: test

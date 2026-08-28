@@ -740,7 +740,7 @@ def test_release_workflow_publishes_from_client_repo_on_release_tag() -> None:
 
     assert "eve-memory-client@*" in workflow
     assert "workflow_dispatch:" in workflow
-    assert "uv run --with pytest --with pytest-cov pytest" in workflow
+    assert "uv run --with pytest --with pytest-cov --with 'mcp>=2,<3' pytest" in workflow
     assert "NO_COLOR=1 TERM=dumb TMPDIR=\"$RUNNER_TEMP/pytest-tmp\"" in workflow
     assert "mkdir -p \"$RUNNER_TEMP/pytest-tmp\"" in workflow
     assert "TMPDIR=\"$RUNNER_TEMP/pytest-tmp\"" in workflow
