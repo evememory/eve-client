@@ -1,0 +1,369 @@
+{
+  "tools": [
+    {
+      "_meta": null,
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": null,
+        "readOnlyHint": true,
+        "title": "Search Memory"
+      },
+      "description": "Search memory using a natural language query. The query text is sent to\n    Eve's servers to perform the search.\n\n    Args:\n        query: The natural language question or keywords\n        source_agent: Agent/tool calling this API (audit trail).\n        limit: Max number of results (default 10)\n        min_similarity: Minimum confidence threshold (0.0-1.0)\n        store: Memory store to search \u2014 \"semantic\" (default),\n               \"episodic\", \"learned_rules\", \"preference\", or \"all\"\n            Routing guidance:\n            - use \"preference\" only for explicitly stored user,\n              workflow/operating, behavior, or taste preferences such as:\n              \"which model do I prefer\", \"what tone do I like\",\n              \"what is my code quality bar\", \"which blues artists do I like\",\n              or \"what kind of feedback do I prefer\"\n            - keep \"semantic\" for durable facts, project or team decisions,\n              architecture choices, and relationship lookup, even if the query\n              uses words like \"prefer\" or \"favorite\" (for example, \"which\n              database do we prefer for this service\")\n            - use \"episodic\" for event, session, and history recall\n            - questions that ask the system to infer a preference that may not\n              be explicitly stored should not be auto-routed to \"preference\"\n            - use \"all\" only for broad recall when you intentionally want\n              multiple memory stores to participate\n        merge_policy: Cross-store merge policy when store=\"all\":\n            interleave, weighted_rrf, or calibrated_fusion.\n        context: Context scope (personal, naya, es). The default is \"all\";\n            both omitting context and explicitly passing \"all\" broaden search\n            across contexts. Use an explicit context such as \"personal\" to\n            constrain preference scope when calling \"preference\".\n        visibility: Visibility scope (\"PERSONAL\" or \"SHARED\"). Omitted visibility\n            defaults to PERSONAL. In active team tenant contexts, omitted visibility\n            fans out across own PERSONAL and team SHARED results only when\n            TEAM_SEARCH_FANOUT_ENABLED=true. Explicit PERSONAL or SHARED remains\n            single-scope.\n        category: Filter by memory category (e.g. \"architecture\",\n            \"security\"). Use \"all\" or omit to search all categories.\n    ",
+      "execution": null,
+      "icons": null,
+      "inputSchema": {
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Category"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Context"
+          },
+          "limit": {
+            "default": 10,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "merge_policy": {
+            "default": "interleave",
+            "enum": [
+              "interleave",
+              "weighted_rrf",
+              "calibrated_fusion",
+              "duplicate_aware_fusion"
+            ],
+            "title": "Merge Policy",
+            "type": "string"
+          },
+          "min_similarity": {
+            "default": 0.7,
+            "title": "Min Similarity",
+            "type": "number"
+          },
+          "project": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Project"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "source_agent": {
+            "default": "unknown",
+            "title": "Source Agent",
+            "type": "string"
+          },
+          "store": {
+            "default": "semantic",
+            "title": "Store",
+            "type": "string"
+          },
+          "visibility": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Visibility"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "memory_searchArguments",
+        "type": "object"
+      },
+      "name": "memory_search",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "memory_searchOutput",
+        "type": "object"
+      },
+      "title": null
+    },
+    {
+      "_meta": null,
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": null,
+        "readOnlyHint": false,
+        "title": "End Memory Session"
+      },
+      "description": "Records a session-end log on Eve's servers, including a summary of the\n    session. Stored until deleted; viewable and deletable in your Eve\n    workspace at evemem.com/app.\n\n    Automatically triggers the AI learning and reflexion pipeline.\n\n    Args:\n        summary: Brief description of the outcome (success/failure)\n        source_agent: Agent/tool calling this API (audit trail). Default \"unknown\".\n        session_id: Optional UUID matching the session_start\n        context: Context scope (personal, naya, es) \u2014 default \"personal\"\n        details: Optional dictionary of context\n        status: Session outcome \u2014 \"success\", \"failure\", or \"unknown\" (optional)\n    ",
+      "execution": null,
+      "icons": null,
+      "inputSchema": {
+        "properties": {
+          "context": {
+            "default": "personal",
+            "title": "Context",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Details"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Session Id"
+          },
+          "source_agent": {
+            "default": "unknown",
+            "title": "Source Agent",
+            "type": "string"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "success",
+                  "failure",
+                  "unknown"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "summary"
+        ],
+        "title": "memory_session_endArguments",
+        "type": "object"
+      },
+      "name": "memory_session_end",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "memory_session_endOutput",
+        "type": "object"
+      },
+      "title": null
+    },
+    {
+      "_meta": null,
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": null,
+        "readOnlyHint": false,
+        "title": "Extract Memories"
+      },
+      "description": "Sends transcript text to Eve's servers, where a third-party AI model\n    (Google Gemini) extracts facts, preferences, and events. The transcript\n    and the extracted memories are stored on Eve's servers. Stored data is\n    viewable in your Eve workspace at evemem.com/app; conversation records\n    can be deleted there, and semantic memories with the memory_forget tool.\n\n    Optionally auto-stores extracted items with dedup checking.\n\n    Args:\n        transcript: Raw transcript text to extract memories from\n        source: Source identifier (e.g., claude_code, gemini_cli)\n        source_agent: Agent/tool calling this API (audit trail). Default \"unknown\".\n        session_id: Optional session UUID for provenance tracking\n        auto_store: If true, automatically store extracted items (with dedup)\n        context: Context scope (personal, naya, es) -- default \"personal\"\n        min_importance: Only extract items at or above this importance (1-10, default 4)\n        use_extraction: If true, use atomic fact extraction\n            (produces SPO fields) instead of classifier\n    ",
+      "execution": null,
+      "icons": null,
+      "inputSchema": {
+        "properties": {
+          "auto_store": {
+            "default": false,
+            "title": "Auto Store",
+            "type": "boolean"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Context"
+          },
+          "min_importance": {
+            "default": 4,
+            "title": "Min Importance",
+            "type": "integer"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Session Id"
+          },
+          "source": {
+            "default": "mcp_client",
+            "title": "Source",
+            "type": "string"
+          },
+          "source_agent": {
+            "default": "unknown",
+            "title": "Source Agent",
+            "type": "string"
+          },
+          "transcript": {
+            "title": "Transcript",
+            "type": "string"
+          },
+          "use_extraction": {
+            "default": false,
+            "title": "Use Extraction",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "transcript"
+        ],
+        "title": "memory_extractArguments",
+        "type": "object"
+      },
+      "name": "memory_extract",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "memory_extractOutput",
+        "type": "object"
+      },
+      "title": null
+    },
+    {
+      "_meta": null,
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": null,
+        "readOnlyHint": false,
+        "title": "Prepare Compact Memory"
+      },
+      "description": "Sends the raw conversation to Eve's servers before context compaction,\n    where a third-party AI model (Google Gemini) distills it into memories.\n    The conversation content and the resulting memories are stored on Eve's\n    servers. Stored data is viewable in your Eve workspace at evemem.com/app;\n    conversation records can be deleted there, and semantic memories with the\n    memory_forget tool. Applies per-session (max 3) and per-agent-hour\n    (max 30) rate limits. Skips if the same session+content hash was already\n    processed.\n\n    Args:\n        session_id: Current session UUID\n        messages: List of {role, content} dicts (user/assistant/system)\n        source_agent: Agent/tool calling this API (audit trail). Default \"unknown\".\n        context: Context scope (personal, naya, es) \u2014 default \"personal\"\n    ",
+      "execution": null,
+      "icons": null,
+      "inputSchema": {
+        "properties": {
+          "context": {
+            "default": "personal",
+            "title": "Context",
+            "type": "string"
+          },
+          "messages": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Messages",
+            "type": "array"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "source_agent": {
+            "default": "unknown",
+            "title": "Source Agent",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "messages"
+        ],
+        "title": "memory_pre_compactArguments",
+        "type": "object"
+      },
+      "name": "memory_pre_compact",
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "memory_pre_compactOutput",
+        "type": "object"
+      },
+      "title": null
+    }
+  ]
+}

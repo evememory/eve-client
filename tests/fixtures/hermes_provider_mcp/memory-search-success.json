@@ -1,0 +1,9 @@
+{
+  "jsonrpc": "2.0",
+  "id": "memory-search-success",
+  "result": {
+    "content": [{"type": "text", "text": "{\"results\": []}"}],
+    "structuredContent": {"result": "{\"results\": []}"},
+    "isError": false
+  }
+}

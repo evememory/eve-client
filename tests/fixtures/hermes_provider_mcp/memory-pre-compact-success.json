@@ -1,0 +1,9 @@
+{
+  "jsonrpc": "2.0",
+  "id": "memory-pre-compact-success",
+  "result": {
+    "content": [{"type": "text", "text": "{\"status\": \"success\", \"chunk_id\": \"00000000-0000-0000-0000-000000000000\", \"returned_ids\": [\"00000000-0000-0000-0000-000000000000\"]}"}],
+    "structuredContent": {"result": "{\"status\": \"success\", \"chunk_id\": \"00000000-0000-0000-0000-000000000000\", \"returned_ids\": [\"00000000-0000-0000-0000-000000000000\"]}"},
+    "isError": false
+  }
+}

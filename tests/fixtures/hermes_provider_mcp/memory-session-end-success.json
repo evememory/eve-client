@@ -1,0 +1,9 @@
+{
+  "jsonrpc": "2.0",
+  "id": "memory-session-end-success",
+  "result": {
+    "content": [{"type": "text", "text": "{\"status\": \"success\", \"entry_id\": \"00000000-0000-0000-0000-000000000000\", \"session_id\": \"00000000-0000-0000-0000-000000000000\", \"context\": \"personal\"}"}],
+    "structuredContent": {"result": "{\"status\": \"success\", \"entry_id\": \"00000000-0000-0000-0000-000000000000\", \"session_id\": \"00000000-0000-0000-0000-000000000000\", \"context\": \"personal\"}"},
+    "isError": false
+  }
+}

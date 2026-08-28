@@ -1,0 +1,9 @@
+{
+  "jsonrpc": "2.0",
+  "id": "memory-extract-success",
+  "result": {
+    "content": [{"type": "text", "text": "{\"extracted_count\": 0, \"stored_count\": 0, \"zero_result_reason\": \"No extracted items met durability or importance requirements.\", \"items\": [], \"store_results\": null}"}],
+    "structuredContent": {"result": "{\"extracted_count\": 0, \"stored_count\": 0, \"zero_result_reason\": \"No extracted items met durability or importance requirements.\", \"items\": [], \"store_results\": null}"},
+    "isError": false
+  }
+}
