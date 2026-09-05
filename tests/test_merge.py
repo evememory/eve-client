@@ -163,9 +163,28 @@ def test_merge_toml_config_oauth_omits_bearer_when_not_supplied(tmp_path: Path) 
     parsed = tomllib.loads(merged)
     assert parsed["mcp_servers"]["eve-memory"]["url"] == "https://mcp.evemem.com"
     assert parsed["mcp_servers"]["eve-memory"]["startup_timeout_sec"] == 60
-    assert parsed["mcp_servers"]["eve-memory"]["bearer_token_env_var"] == "EVE_CODEX_BEARER_TOKEN"
+    assert "bearer_token_env_var" not in parsed["mcp_servers"]["eve-memory"]
     assert "Authorization" not in parsed["mcp_servers"]["eve-memory"].get("http_headers", {})
     assert parsed["mcp_servers"]["eve-memory"]["http_headers"]["X-Source-Agent"] == "codex_cli"
+
+
+def test_merge_toml_config_oauth_requests_codex_native_scopes(tmp_path: Path) -> None:
+    config = tmp_path / "config.toml"
+    merged = merge_toml_config(
+        config,
+        "codex-cli",
+        "https://mcp.evemem.com/mcp",
+        None,
+        auth_mode="oauth",
+    )
+
+    parsed = tomllib.loads(merged)
+
+    assert parsed["mcp_servers"]["eve-memory"]["scopes"] == [
+        "memory.read",
+        "memory.write",
+        "offline_access",
+    ]
 
 
 def test_companion_content_contains_markers() -> None:

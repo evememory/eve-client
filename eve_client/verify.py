@@ -256,7 +256,9 @@ def verify_tools(
         result["scope_env_configured"] = not drift
         auth_mode = auth_overrides.get(detected.name, "api-key")
         try:
-            if auth_mode == "oauth":
+            if auth_mode == "oauth" and detected.name == "codex-cli":
+                credential, source = None, None
+            elif auth_mode == "oauth":
                 credential, source = credential_store.get_bearer_token(detected.name)
             else:
                 credential, source = credential_store.get_api_key(detected.name)
@@ -264,7 +266,12 @@ def verify_tools(
             credential, source = None, "unavailable"
         result["credential_source"] = source
         if result["feature_enabled"] and eve_entry:
-            if auth_mode == "oauth":
+            if auth_mode == "oauth" and detected.name == "codex-cli":
+                result["connectivity"] = {
+                    "success": False,
+                    "error": "complete native OAuth in Codex",
+                }
+            elif auth_mode == "oauth":
                 if credential or detected.name != "codex-cli":
                     result["connectivity"] = verify_connectivity(
                         config.mcp_base_url,

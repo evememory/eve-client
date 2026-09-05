@@ -169,7 +169,7 @@ class TestConfigPlacement:
         assert "other" in parsed["mcp_servers"]
         assert "eve-memory" in parsed["mcp_servers"]
 
-    def test_codex_cli_oauth_uses_bearer_token_env_var(self, tmp_path: Path) -> None:
+    def test_codex_cli_oauth_uses_native_oauth(self, tmp_path: Path) -> None:
         config = tmp_path / "config.toml"
         merged = merge_toml_config(
             config,
@@ -180,7 +180,7 @@ class TestConfigPlacement:
         )
         parsed = tomllib.loads(merged)
         eve = parsed["mcp_servers"]["eve-memory"]
-        assert eve["bearer_token_env_var"] == "EVE_CODEX_BEARER_TOKEN"
+        assert "bearer_token_env_var" not in eve
         assert "X-API-Key" not in eve.get("http_headers", {})
         assert eve["http_headers"]["X-Source-Agent"] == "codex_cli"
 

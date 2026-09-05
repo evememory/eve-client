@@ -411,7 +411,7 @@ def test_verify_tools_for_codex_oauth_does_not_require_local_credential(
             detected, config, credential_store, auth_overrides={"codex-cli": "oauth"}
         )
     assert results[0]["eve_configured"] is True
-    assert results[0]["connectivity"]["error"] == "credential missing"
+    assert results[0]["connectivity"]["error"] == "complete native OAuth in Codex"
     assert results[0]["state"] == "enabled_unconfigured"
 
 

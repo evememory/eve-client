@@ -287,6 +287,7 @@ def eve_toml_entry_has_unknown_fields(config_path: Path) -> bool:
         allowed_prefixes = {
             "url =",
             "startup_timeout_sec =",
+            "scopes =",
             "env_http_headers = {",
             "bearer_token_env_var =",
             "X-API-Key =",
@@ -320,7 +321,7 @@ def _build_codex_toml_snippet(
     if auth_mode == "oauth":
         lines.extend(
             [
-                'bearer_token_env_var = "EVE_CODEX_BEARER_TOKEN"',
+                'scopes = ["memory.read", "memory.write", "offline_access"]',
                 "",
                 '[mcp_servers."eve-memory".http_headers]',
                 f'X-Source-Agent = "{_source_agent("codex-cli")}"',

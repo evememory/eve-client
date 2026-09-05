@@ -373,9 +373,9 @@ def _oauth_tool_next_steps(tool_name: str) -> list[str]:
         ]
     if tool_name == "codex-cli":
         return [
-            "Open Codex CLI and inspect the Eve MCP connection.",
-            "If Codex offers OAuth authentication for the Eve MCP server, "
-            "complete it in the browser.",
+            "Select Authenticate for Eve in Codex Desktop, or run "
+            "`codex mcp login eve-memory`.",
+            "Complete the Codex authorization flow in the browser.",
             "Re-run a small Eve memory store/search round trip to confirm "
             "the OAuth session is active.",
         ]
@@ -389,8 +389,13 @@ def _oauth_tool_next_steps(tool_name: str) -> list[str]:
 def _print_oauth_guidance(
     config, tool_name: str, *, open_browser: bool, install_source: str | None = None
 ) -> None:
-    connect_url = _connect_url(config, tool_name, install_source)
     _print_hosted_endpoint_context(config)
+    if tool_name == "codex-cli":
+        console.print("\n[bold]Next step in Codex[/bold]")
+        for step in _oauth_tool_next_steps(tool_name):
+            console.print(f"- {step}")
+        return
+    connect_url = _connect_url(config, tool_name, install_source)
     console.print(f"Connect in browser: [bold]{connect_url}[/bold]")
     console.print(f"Protected resource metadata: [bold]{_resource_metadata_url(config)}[/bold]")
     console.print("\n[bold]Next step in the client[/bold]")
@@ -406,7 +411,7 @@ def _print_oauth_guidance(
 
 
 def _supports_device_flow(tool_name: str) -> bool:
-    return tool_name == "codex-cli"
+    return False
 
 
 def _store_oauth_session(config, tool_name: str, token_result) -> tuple[OAuthSession, str]:
@@ -1216,6 +1221,11 @@ def connect(
     _print_tool_actions(selected_tool_plan)
 
     if selected_auth_mode == "oauth":
+        if detected_tool.name == "codex-cli" and bearer_token:
+            raise typer.BadParameter(
+                "Codex native OAuth does not use --bearer-token. "
+                "Select Authenticate in Codex or run `codex mcp login eve-memory`."
+            )
         if _supports_device_flow(detected_tool.name):
             config = _apply_requested_file_fallback(config, allow_file_fallback)
         if not selected_tool_plan.supported or not selected_tool_plan.actions:
@@ -1248,6 +1258,18 @@ def connect(
             auth_overrides={detected_tool.name: selected_auth_mode},
             allowed_tools=[detected_tool.name],
         )
+        if detected_tool.name == "codex-cli" and not bearer_token:
+            console.print(
+                f"[green]Configuration installed.[/green] Transaction: "
+                f"[bold]{result.transaction_id}[/bold]"
+            )
+            _print_oauth_guidance(
+                config,
+                detected_tool.name,
+                open_browser=False,
+                install_source=resolved_install_source,
+            )
+            return
         verify_result = verify_tools(
             [detected_tool],
             config,
@@ -2083,6 +2105,11 @@ def auth_login(
     )
     tool_name = detected_tool.name
     if selected_auth_mode == "oauth":
+        if tool_name == "codex-cli" and bearer_token:
+            raise typer.BadParameter(
+                "Codex native OAuth does not use --bearer-token. "
+                "Select Authenticate in Codex or run `codex mcp login eve-memory`."
+            )
         if _supports_device_flow(tool_name):
             config = _apply_requested_file_fallback(config, allow_file_fallback)
         if bearer_token:

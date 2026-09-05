@@ -289,22 +289,21 @@ Primary auth path today:
 
 - Eve API key
 
-### Codex CLI
+### Codex Desktop and CLI
 
 Supported today:
 
 - MCP config
-- Eve-owned OAuth login
-- runtime bearer token injection
+- native Codex MCP OAuth login
 - importer support: `scan`, `preview`, `upload`, `resume`
 
 Primary auth path today:
 
-- Eve OAuth
+- native Codex OAuth
 
-Important:
-
-- native Codex MCP login is **not** the supported Eve path
+Codex Desktop, Codex CLI, and the IDE extension share the same MCP
+configuration. The generated entry includes Eve's exact API and refresh
+scopes. API-key configuration remains available as an explicit alternative.
 
 ### Claude Desktop
 
@@ -419,17 +418,17 @@ For Gemini, keep the same shape and change:
 X-Source-Agent = gemini_cli
 ```
 
-### Codex CLI (OAuth)
+### Codex Desktop and CLI (OAuth)
 
-Codex should use an Eve-owned bearer token, not native `codex mcp login`.
+Select **Authenticate** in Codex Desktop or run `codex mcp login eve-memory`.
 
 ```toml
 [mcp_servers.eve-memory]
 url = "https://mcp.evemem.com/mcp"
-bearer_token_env_var = "EVE_CODEX_BEARER_TOKEN"
 startup_timeout_sec = 60
+scopes = ["memory.read", "memory.write", "offline_access"]
 
-[mcp_servers.eve-memory.headers]
+[mcp_servers.eve-memory.http_headers]
 X-Source-Agent = "codex_cli"
 ```
 
@@ -519,7 +518,7 @@ Build Python artifacts:
 uv build .
 ```
 
-The current release is `eve-memory-client` 0.3.9. See
+The current release is `eve-memory-client` 0.3.10. See
 [`CHANGELOG.md`](CHANGELOG.md) for release details.
 
 Check build artifacts:
@@ -535,7 +534,7 @@ bash scripts/build-eve-client-release.sh
 ```
 
 Release tags for the PyPI distribution use `eve-memory-client@<version>`, for
-example `eve-memory-client@0.3.9`.
+example `eve-memory-client@0.3.10`.
 
 ## License
 

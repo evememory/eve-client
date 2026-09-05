@@ -5,9 +5,6 @@ from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from unittest.mock import patch
 
-from keyring.errors import KeyringError
-from typer.testing import CliRunner
-
 from eve_client._version import __version__
 from eve_client.auth import OAuthSession
 from eve_client.auth.local_store import LocalCredentialStore
@@ -18,6 +15,8 @@ from eve_client.manifest import write_manifest
 from eve_client.models import ManifestRecord
 from eve_client.state_binding import store_sequence_watermark
 from eve_client.transaction_state import write_transaction_state
+from keyring.errors import KeyringError
+from typer.testing import CliRunner
 
 runner = CliRunner()
 
@@ -417,42 +416,90 @@ def test_auth_login_allows_oauth_for_codex(tmp_path: Path, monkeypatch) -> None:
             "eve_client.detect.base.shutil.which",
             side_effect=lambda name: "/usr/bin/codex" if name == "codex" else None,
         ),
-        patch(
-            "eve_client.cli.start_auth0_device_authorization",
-            return_value=type(
-                "_Device",
-                (),
-                {
-                    "device_code": "dev-code",
-                    "user_code": "USER-CODE",
-                    "verification_uri": "https://evemem.us.auth0.com/activate",
-                    "verification_uri_complete": "https://evemem.us.auth0.com/activate?user_code=USER-CODE",
-                    "expires_in": 600,
-                    "interval": 1,
-                },
-            )(),
-        ),
-        patch(
-            "eve_client.cli.poll_auth0_device_token",
-            return_value=type(
-                "_Token",
-                (),
-                {
-                    "access_token": "oauth-access-token",
-                    "refresh_token": "oauth-refresh-token",
-                    "expires_in": 3600,
-                    "token_type": "Bearer",
-                    "scope": "openid profile email offline_access memory.read memory.write",
-                },
-            )(),
-        ),
-        patched_keyring(),
+        patch("eve_client.cli.start_auth0_device_authorization") as start_device,
+        patch("eve_client.cli.poll_auth0_device_token") as poll_device,
     ):
         result = runner.invoke(
             app, ["auth", "login", "--tool", "codex-cli", "--auth-mode", "oauth", "--no-browser"]
         )
     assert result.exit_code == 0
-    assert "Stored codex-cli OAuth session" in result.output
+    assert "mcp login" in result.output
+    assert "Stored codex-cli OAuth session" not in result.output
+    start_device.assert_not_called()
+    poll_device.assert_not_called()
+
+
+def test_auth_login_rejects_bearer_token_for_codex_native_oauth(
+    tmp_path: Path, monkeypatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("eve_client.config.platform.system", lambda: "Linux")
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / ".cfg"))
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / ".state"))
+    with (
+        patch(
+            "eve_client.detect.base.shutil.which",
+            side_effect=lambda name: "/usr/bin/codex" if name == "codex" else None,
+        ),
+        patched_keyring(),
+    ):
+        result = runner.invoke(
+            app,
+            [
+                "auth",
+                "login",
+                "--tool",
+                "codex-cli",
+                "--auth-mode",
+                "oauth",
+                "--bearer-token",
+                "oauth-access-token",
+            ],
+        )
+
+    assert result.exit_code != 0
+    assert "Codex native OAuth does not use --bearer-token" in result.output
+    assert "oauth-access-token" not in result.output
+
+
+def test_connect_codex_oauth_installs_config_then_defers_to_codex(
+    tmp_path: Path, monkeypatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    root = tmp_path.resolve()
+    with (
+        patch(
+            "eve_client.cli.resolve_config",
+            return_value=_resolved_config(root, codex_enabled=True, codex_source="config"),
+        ),
+        patch("eve_client.detect.base._home", return_value=root),
+        patch(
+            "eve_client.detect.base.shutil.which",
+            side_effect=lambda name: "/usr/bin/codex" if name == "codex" else None,
+        ),
+        patch("eve_client.cli.apply_install_plan") as apply_install_plan,
+        patch("eve_client.cli.verify_tools") as verify_tools,
+    ):
+        apply_install_plan.return_value.transaction_id = "txn-codex"
+        result = runner.invoke(
+            app,
+            [
+                "connect",
+                "--tool",
+                "codex-cli",
+                "--auth-mode",
+                "oauth",
+                "--no-browser",
+                "--yes",
+            ],
+        )
+
+    assert result.exit_code == 0
+    assert "Configuration installed" in result.output
+    assert "mcp login" in result.output
+    assert "OAuth verification succeeded." not in result.output
+    apply_install_plan.assert_called_once()
+    verify_tools.assert_not_called()
 
 
 def test_auth_login_does_not_persist_fallback_when_validation_fails(

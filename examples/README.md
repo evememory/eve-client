@@ -55,14 +55,14 @@ Add to `~/.codex/config.toml`:
 ```toml
 [mcp_servers.eve-memory]
 url = "https://mcp.evemem.com/mcp"
-bearer_token_env_var = "EVE_CODEX_BEARER_TOKEN"
 startup_timeout_sec = 60
+scopes = ["memory.read", "memory.write", "offline_access"]
 
-[mcp_servers.eve-memory.headers]
+[mcp_servers.eve-memory.http_headers]
 X-Source-Agent = "codex_cli"
 ```
 
-Set bearer token: `export EVE_CODEX_BEARER_TOKEN=<your-eve-oauth-token>`
+Select **Authenticate** in Codex Desktop or run `codex mcp login eve-memory`.
 
 ---
 

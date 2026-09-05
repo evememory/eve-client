@@ -2,6 +2,27 @@
 
 This file records notable changes to `eve-memory-client`.
 
+## [0.3.10] - 2026-09-05
+
+### Fixed
+
+- Added the exact Eve API and refresh scopes to generated Codex MCP OAuth
+  configuration so Codex Desktop and Codex CLI request usable Eve tokens.
+- Removed `bearer_token_env_var` from generated Codex OAuth entries because
+  Codex treats its presence as an explicit bearer configuration and disables
+  native OAuth discovery.
+- Updated Eve's Codex connect and auth guidance to use Codex-native OAuth
+  instead of Eve's legacy device flow.
+- Kept one shared Codex configuration for the desktop app, CLI, and IDE
+  extension. The source-agent header remains provenance only.
+
+### Compatibility
+
+- Added native Codex MCP login as the supported OAuth path. The explicit
+  API-key path remains available.
+- The stable Codex CIMD client is derived from the Eve MCP URL, so one Auth0
+  client serves all Codex installations that use the canonical endpoint.
+
 ## [0.3.9] - 2026-08-28
 
 ### Fixed
