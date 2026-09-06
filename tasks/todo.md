@@ -4,8 +4,8 @@
 - [x] Normalize only outbound session IDs across all four write/lifecycle calls.
 - [x] Distinguish explicit MCP tool errors without exposing raw error content.
 - [x] Pass targeted regression, real-validator Hermes smoke, and full tests.
-- [ ] Complete independent review, merge, and publish 0.3.12.
-- [ ] Verify publication and synchronize the parent release record.
+- [x] Complete independent review, merge, and publish 0.3.12.
+- [x] Verify publication and synchronize the parent release record.
 
 Scope: client adapter, regression tests, and release documentation only. No
 server, dependency, profile, retry, new setting, or local-installation changes.
@@ -23,6 +23,16 @@ native ID `20260906_154002_167f68` mapped to
 `7e9a96c1-6e60-540b-94e9-3995f21ed866`. No live-memory writes were made.
 Independent Codex review approved the patch and the real-validator smoke;
 no accepted findings remain open.
+
+Release: `eve-memory-client@0.3.12`, commit
+`4747e257bbcb7a7a8d5cde057640508a2dbb9a84`.
+[PyPI](https://pypi.org/project/eve-memory-client/0.3.12/) serves both artifacts.
+The public package was installed only into a disposable directory and passed
+the same real-validator Hermes smoke. Local Hermes remains on 0.3.11; upgrading
+the user's installation is not part of this fix-and-publish request.
+Wheel SHA-256: `75bd294d0755f3582e2010688fe600df3c159c9d672060e3137355ad65c705af`.
+[Workflow 34037990858](https://github.com/evememory/eve-client/actions/runs/34037990858)
+passed all test, build, and publication jobs.
 
 # Hermes interactive Eve tools (issue #4)
 
