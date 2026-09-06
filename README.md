@@ -136,8 +136,9 @@ those edits are not mirrored into Eve. Delete/edit operations remain outside
 the native provider's two-tool interface.
 
 The interactive tools require `eve-memory-client` 0.3.11 or newer. After an
-upgrade, start a new Hermes session so it loads the updated provider and its
-instructions. No separate skill installation is required.
+upgrade, restart the running Hermes process (CLI, Desktop, or gateway), then
+start a new session to load the updated provider and its instructions. No
+separate skill installation is required.
 
 ### Existing Eve MCP connector
 

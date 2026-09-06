@@ -38,7 +38,8 @@ skills use a different interface and require no changes for this release.
   passes with that public installation. No live-memory writes were tested.
 - Only eve-memory-client changed in either environment. Hermes MCP remains
   2.0.0, and all 14 fingerprinted profile/configuration files are unchanged.
-- Start a new Hermes session to load the new provider instructions and tools.
+- Restart the running Hermes process, then start a new session to load the new
+  provider instructions and tools. The installation did not restart services.
 
 ## Implementation evidence
 
