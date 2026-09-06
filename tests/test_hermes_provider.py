@@ -55,6 +55,7 @@ sys.modules.setdefault("agent.secret_scope", secret_scope_module)
 
 from eve_client.hermes_provider import provider as provider_module
 from eve_client.hermes_provider.provider import EveMemoryProvider, register
+from eve_client.hermes_provider.transport import EveMcpTransport
 
 
 class _RecordingTransport:
@@ -80,6 +81,182 @@ def _active_provider(transport: _RecordingTransport) -> EveMemoryProvider:
     provider._transport = transport  # type: ignore[assignment]
     provider._session_id = "session-1"
     return provider
+
+
+def test_interactive_tools_map_store_through_real_transport_http_boundary(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Break caught: a model write can lose its source/session/visibility envelope or receipt.
+    requests: list[dict[str, Any]] = []
+
+    class ResponseStream:
+        def __init__(self, response: httpx.Response) -> None:
+            self.response = response
+
+        def __enter__(self) -> httpx.Response:
+            return self.response
+
+        def __exit__(self, *args: object) -> None:
+            self.response.close()
+
+    class HttpBoundary:
+        def __init__(self, *, timeout: httpx.Timeout) -> None:
+            del timeout
+
+        def __enter__(self) -> HttpBoundary:
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def stream(self, method: str, url: str, **kwargs: Any) -> ResponseStream:
+            requests.append({"method": method, "url": url, **kwargs})
+            request = kwargs["json"]
+            return ResponseStream(httpx.Response(200, json={
+                "jsonrpc": "2.0", "id": request["id"],
+                "result": {"structuredContent": {"result": json.dumps({
+                    "status": "success", "chunk_id": "receipt-1", "scope_warning": "kept",
+                })}, "isError": False},
+            }))
+
+    monkeypatch.setattr("eve_client.hermes_provider.transport.httpx.Client", HttpBoundary)
+    provider = EveMemoryProvider()
+    provider._active = True
+    provider._session_id = "session-1"
+    provider._transport = EveMcpTransport("https://memory.example/mcp", "key", httpx.Timeout(2))
+
+    assert json.loads(provider.handle_tool_call("eve_store", {"content": "Keep exact  text", "store": "semantic"})) == {
+        "status": "success", "chunk_id": "receipt-1", "scope_warning": "kept",
+    }
+    assert requests[0]["method"] == "POST"
+    assert requests[0]["url"] == "https://memory.example/mcp"
+    assert requests[0]["json"]["params"] == {"name": "memory_store", "arguments": {
+        "text": "Keep exact  text", "source": "hermes_agent", "source_agent": "hermes_agent",
+        "session_id": "session-1", "store": "semantic", "context": "personal", "visibility": "PERSONAL",
+    }}
+
+
+def test_interactive_tools_validate_before_call_and_reject_stale_session() -> None:
+    # Break caught: malformed model inputs or a changed session can issue a remote request.
+    transport = _RecordingTransport([{"results": []}])
+    provider = _active_provider(transport)
+    for tool, args in (
+        ("unknown", {}),
+        ("eve_search", {"query": " "}),
+        ("eve_search", {"query": "ok", "limit": 21}),
+        ("eve_store", {"content": "x", "context": "all"}),
+        ("eve_store", {"content": "x", "context": "EPHEMERAL"}),
+        ("eve_store", {"content": "x", "store": "preference"}),
+        ("eve_store", {"content": "x", "source": "model override"}),
+    ):
+        assert "error" in json.loads(provider.handle_tool_call(tool, args))
+    assert transport.calls == []
+
+    class SwitchingTransport(_RecordingTransport):
+        def call_tool(self, tool_name: str, arguments: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
+            provider.on_session_switch("session-2")
+            return super().call_tool(tool_name, arguments, **kwargs)
+
+    provider._transport = SwitchingTransport()  # type: ignore[assignment]
+    assert "error" in json.loads(provider.handle_tool_call("eve_search", {"query": "query"}))
+
+
+def test_interactive_write_failure_is_redacted_unconfirmed_and_never_retried() -> None:
+    # Break caught: a failed write leaks transport details, claims success, or repeats a non-idempotent call.
+    class FailingTransport(_RecordingTransport):
+        def call_tool(self, tool_name: str, arguments: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
+            self.calls.append((tool_name, arguments))
+            raise RuntimeError("credential=private")
+
+    transport = FailingTransport()
+    provider = _active_provider(transport)
+    result = json.loads(provider.handle_tool_call("eve_store", {"content": "remember"}))
+
+    assert result == {"error": "Eve write completion is unconfirmed"}
+    assert [name for name, _ in transport.calls] == ["memory_store"]
+    assert "private" not in json.dumps(result)
+
+
+def test_interactive_write_maps_episodic_and_stale_completion_is_unconfirmed() -> None:
+    # Break caught: episodic writes map to the wrong store or a changed session claims their outcome.
+    provider = _active_provider(_RecordingTransport([{"status": "success", "entry_id": "receipt-2"}]))
+    assert json.loads(provider.handle_tool_call("eve_store", {"content": "event", "store": "episodic"})) == {
+        "status": "success", "entry_id": "receipt-2",
+    }
+    assert provider._transport.calls[0][1]["store"] == "episodic"  # type: ignore[union-attr]
+
+    class SwitchingTransport(_RecordingTransport):
+        def call_tool(self, tool_name: str, arguments: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
+            provider.on_session_switch("session-2")
+            return super().call_tool(tool_name, arguments, **kwargs)
+
+    provider.on_session_switch("session-1")
+    provider._transport = SwitchingTransport()  # type: ignore[assignment]
+    assert json.loads(provider.handle_tool_call("eve_store", {"content": "event"})) == {
+        "error": "Eve write completion is unconfirmed; session changed",
+    }
+
+
+def test_interactive_tools_do_not_call_transport_while_inactive() -> None:
+    # Break caught: an inactive/non-primary provider can make interactive remote calls.
+    transport = _RecordingTransport()
+    provider = EveMemoryProvider()
+    provider._transport = transport  # type: ignore[assignment]
+
+    assert json.loads(provider.handle_tool_call("eve_search", {"query": "memory"})) == {
+        "error": "Eve provider is inactive",
+    }
+    assert transport.calls == []
+
+
+@pytest.mark.parametrize(
+    ("context", "tool", "args", "expected_context"),
+    [
+        (" naya ", "eve_search", {"query": "memory", "context": " naya "}, "naya"),
+        (" naya ", "eve_search", {"query": "memory"}, "naya"),
+        ("personal", "eve_search", {"query": "memory", "context": " all "}, "all"),
+    ],
+)
+def test_interactive_tools_normalize_valid_whitespace_contexts(
+    context: str, tool: str, args: dict[str, Any], expected_context: str
+) -> None:
+    # Break caught: valid Eve context names with surrounding whitespace are rejected or sent unnormalized.
+    transport = _RecordingTransport([{"results": []}])
+    provider = _active_provider(transport)
+    provider._config["context"] = context
+
+    assert "error" not in json.loads(provider.handle_tool_call(tool, args))
+    assert transport.calls[0][1]["context"] == expected_context
+
+
+@pytest.mark.parametrize("context", [" all ", " EPHEMERAL "])
+def test_interactive_write_rejects_whitespace_wrapped_reserved_contexts(context: str) -> None:
+    # Break caught: write-only scope restrictions are bypassed by surrounding whitespace.
+    transport = _RecordingTransport()
+    provider = _active_provider(transport)
+
+    assert "error" in json.loads(provider.handle_tool_call("eve_store", {
+        "content": "memory", "context": context,
+    }))
+    assert transport.calls == []
+
+
+def test_interactive_search_defaults_and_static_instructions() -> None:
+    # Break caught: interactive searches ignore configured defaults or the model lacks safe tool guidance.
+    transport = _RecordingTransport([{"results": []}])
+    provider = _active_provider(transport)
+    provider._config.update({"context": "naya", "recall_limit": 3, "min_similarity": 0.8, "auto_recall": False})
+
+    assert json.loads(provider.handle_tool_call("eve_search", {"query": "decision"})) == {"results": []}
+    assert transport.calls == [("memory_search", {
+        "query": "decision", "source_agent": "hermes_agent", "context": "naya", "store": "all",
+        "limit": 3, "min_similarity": 0.8, "visibility": "PERSONAL",
+    })]
+    prompt = provider.system_prompt_block()
+    assert "eve_search" in prompt and "eve_store" in prompt
+    assert "untrusted" in prompt and "semantic" in prompt and "episodic" in prompt
+    assert "all stores" in prompt and "default semantic" in prompt
+    assert "preference or rules" in prompt and "all is search-only" in prompt
 
 
 def test_queue_prefetch_calls_eve_with_exact_bounded_recall_contract() -> None:
@@ -581,9 +758,11 @@ def test_provider_satisfies_hermes_abc_and_registers_exactly_once() -> None:
     assert isinstance(registered[0], EveMemoryProvider)
 
 
-def test_provider_has_no_model_tools() -> None:
-    # Break caught: this foundational slice exposes model-callable Eve tools.
-    assert EveMemoryProvider().get_tool_schemas() == []
+def test_provider_exposes_only_the_two_confined_model_tools() -> None:
+    # Break caught: provider discovery exposes a tool outside the approved interactive surface.
+    assert [schema["name"] for schema in EveMemoryProvider().get_tool_schemas()] == [
+        "eve_search", "eve_store",
+    ]
 
 
 def test_availability_uses_scoped_key_without_network(monkeypatch: pytest.MonkeyPatch) -> None:

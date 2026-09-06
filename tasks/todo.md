@@ -1,3 +1,32 @@
+# Hermes interactive Eve tools (issue #4)
+
+Spec: [confined adapter contract](../docs/specs/2026-09-06-hermes-interactive-tools.md).
+
+- [x] Add only `eve_search` and `eve_store` to the native provider.
+- [x] Update provider instructions, README, and unreleased changelog.
+- [x] Complete regression tests and the isolated Hermes integration check.
+- [x] Complete independent Codex review for correctness, safety, and scope.
+
+## Review
+
+Release, installation, server changes, and user-profile changes are outside this
+slice. Existing lifecycle behavior and the separate MCP connector are unchanged.
+
+Before the review correction: 684 passed and 7 skipped across the full run and the successful
+distribution-test rerun; 83% total coverage, 96% provider coverage, and 97%
+transport coverage. The first run passed 678 tests; six package builds were
+blocked by sandbox access to the uv cache. Rerunning the distribution module
+with cache access passed all 22 checks, including those six.
+
+Independent review found one compatibility issue: context names must have
+surrounding whitespace removed before validation, as Eve already does. Accepted
+and fixed with regression tests. Final focused verification passed 119 tests
+with 1 skipped. No other review findings; no accepted findings remain open.
+
+An isolated profile with fake HTTP passed discovery, tool injection, prompt
+assembly, search, and exact write-receipt dispatch through the installed Hermes
+memory manager. No live memories or active profile settings were changed.
+
 # MCP SDK 2 local bridge and 0.3.8 release
 
 - [x] Define SDK 2 bridge behavior for modern and legacy client modes.

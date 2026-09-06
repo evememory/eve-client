@@ -111,8 +111,29 @@ secret environment. It stores other Eve values in that profile's `eve.json`.
 through 30. It is a behavioral setting in `eve.json`, not an environment
 variable.
 The native provider gives bounded automatic recall, pre-compaction memory
-processing, and end-of-session extraction. It exposes no model-callable Eve
-tools.
+processing, and end-of-session extraction. It also exposes two interactive tools:
+
+- `eve_search`: search on demand across semantic, episodic, preference, and
+  learned-rule stores. Use `preference` for explicitly stored user preferences,
+  `semantic` for facts and project decisions, and `episodic` for session history.
+- `eve_store`: save exact content immediately to the semantic store (default)
+  or episodic store and return Eve's receipt. It does not create dedicated
+  preference or learned-rule records.
+
+Both tools work when `auto_recall` is disabled. They default to the profile's
+configured context and accept a custom context name. Search can explicitly use
+context `all`; writes require a specific context. Search defaults to all stores
+and the profile's recall limit and similarity threshold. Calls use PERSONAL
+visibility and the existing `request_timeout_seconds` setting.
+
+For example, ask Hermes to "Search Eve for our authentication decision in the
+project context" or "Save this approved decision to Eve." A save is confirmed
+only by Eve's response. After a timeout, completion is unknown: search to verify
+before repeating the write. The provider does not retry automatically.
+
+Hermes's built-in memory tool still manages local `MEMORY.md` and `USER.md`;
+those edits are not mirrored into Eve. Delete/edit operations remain outside
+the native provider's two-tool interface.
 
 ### Existing Eve MCP connector
 
@@ -134,7 +155,7 @@ connector do not share credentials. Neither path replaces the other.
 
 | Purpose | Setup | Authentication | Model tools |
 | --- | --- | --- | --- |
-| Native Eve memory provider | `hermes --profile work memory setup` | `EVE_API_KEY` in the profile secret environment | None |
+| Native Eve memory provider | `hermes --profile work memory setup` | `EVE_API_KEY` in the profile secret environment | `eve_search`, `eve_store` |
 | Existing Eve MCP connector | `eve connect --tool hermes --profile work` | Hermes-managed OAuth session | Explicit Eve MCP tools |
 
 Existing profiles use fresh reauthentication when you run `eve connect` again.

@@ -262,6 +262,24 @@ def test_decodes_each_allowlisted_tool_success_fixture(
     assert clients[0].requests[0]["json"]["params"]["name"] == tool_name
 
 
+def test_allows_memory_store_and_returns_its_receipt(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Break caught: interactive writes are rejected before their receipt can reach Hermes.
+    def make_client(*, timeout: httpx.Timeout) -> RecordingClient:
+        client = RecordingClient(timeout=timeout)
+        client.response = lambda request: httpx.Response(200, json={
+            "jsonrpc": "2.0", "id": request["id"], "result": {
+                "structuredContent": {"result": '{"status":"success","chunk_id":"receipt-1"}'},
+                "isError": False,
+            },
+        })
+        return client
+
+    monkeypatch.setattr("eve_client.hermes_provider.transport.httpx.Client", make_client)
+    assert transport().call_tool("memory_store", {"text": "remember"}) == {
+        "status": "success", "chunk_id": "receipt-1",
+    }
+
+
 def test_rejects_unknown_tool_before_opening_network_client(monkeypatch: pytest.MonkeyPatch) -> None:
     # Break caught: arbitrary tool names are sent over the network.
     def no_client(**kwargs: Any) -> RecordingClient:
@@ -269,7 +287,7 @@ def test_rejects_unknown_tool_before_opening_network_client(monkeypatch: pytest.
 
     monkeypatch.setattr("eve_client.hermes_provider.transport.httpx.Client", no_client)
     with pytest.raises(EveMcpTransportError):
-        transport().call_tool("memory_store", {"secret": REQUEST_CONTENT})
+        transport().call_tool("memory_forget", {"secret": REQUEST_CONTENT})
 
 
 @pytest.mark.parametrize("endpoint", ["http://memory.example/mcp", "ftp://memory.example/mcp"])

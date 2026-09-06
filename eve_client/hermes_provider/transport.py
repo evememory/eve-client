@@ -13,7 +13,7 @@ import httpx
 
 
 _ALLOWED_TOOLS = frozenset(
-    {"memory_search", "memory_pre_compact", "memory_extract", "memory_session_end"}
+    {"memory_search", "memory_store", "memory_pre_compact", "memory_extract", "memory_session_end"}
 )
 _MAX_RESPONSE_BYTES = 1_048_576
 _RESPONSE_READ_CHUNK_BYTES = 64 * 1024

@@ -38,7 +38,7 @@ provider = _load_provider_from_entry_point(entry_point, register_skills=False)
 assert isinstance(provider, MemoryProvider)
 assert provider.name == 'eve'
 assert provider.pre_compress_checkpoint_api_version == 1
-assert provider.get_tool_schemas() == []
+assert [tool['name'] for tool in provider.get_tool_schemas()] == ['eve_search', 'eve_store']
 print('ok')
 """
     env = os.environ.copy()

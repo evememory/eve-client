@@ -2,6 +2,16 @@
 
 This file records notable changes to `eve-memory-client`.
 
+## [Unreleased]
+
+### Added
+
+- Native Hermes `eve_search` and `eve_store` tools for on-demand retrieval and
+  immediate semantic/episodic writes, including when automatic recall is disabled.
+- Provider instructions for store selection, profile context defaults, and
+  confirmed write receipts. Interactive tools retain bounded requests, PERSONAL
+  visibility, and redacted failures without automatic retries.
+
 ## [0.3.10] - 2026-09-05
 
 ### Fixed
