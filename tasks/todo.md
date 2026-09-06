@@ -9,8 +9,24 @@ Spec: [confined adapter contract](../docs/specs/2026-09-06-hermes-interactive-to
 
 ## Review
 
-Release, installation, server changes, and user-profile changes are outside this
-slice. Existing lifecycle behavior and the separate MCP connector are unchanged.
+Server and user-profile changes are outside this slice. Existing lifecycle
+behavior and the separate MCP connector are unchanged.
+
+## Approved 0.3.11 delivery
+
+- [ ] Verify the release candidate and merge to client main.
+- [ ] Publish 0.3.11 through the existing release workflow and verify artifacts.
+- [ ] Install the public package into local Hermes and the standalone Eve CLI.
+- [ ] Verify installed version, provider discovery, tools, and unchanged profiles.
+- [ ] Synchronize the parent repository's client pointer and release record.
+
+The provider supplies its own tool instructions. Separate Codex and Claude
+skills use a different interface and require no changes for this release.
+
+## Implementation evidence
+
+Release candidate 0.3.11: full suite passed with 689 tests, 7 skipped, and 83%
+coverage after the context-validation correction and release metadata update.
 
 Before the review correction: 684 passed and 7 skipped across the full run and the successful
 distribution-test rerun; 83% total coverage, 96% provider coverage, and 97%

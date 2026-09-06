@@ -2,7 +2,7 @@
 
 This file records notable changes to `eve-memory-client`.
 
-## [Unreleased]
+## [0.3.11] - 2026-09-06
 
 ### Added
 

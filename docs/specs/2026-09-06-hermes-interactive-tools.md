@@ -1,6 +1,6 @@
 # Hermes interactive Eve tools
 
-Status: implemented and verified on the feature branch; not released or installed.
+Status: implemented and verified; 0.3.11 release and installation approved.
 Tracks eve-client issue #4. Verification and review: [task record](../../tasks/todo.md).
 
 ## Contract
@@ -37,7 +37,9 @@ Tracks eve-client issue #4. Verification and review: [task record](../../tasks/t
 
 No Hermes core, OAuth connector, server, dependency, local-profile, retry queue,
 built-in Markdown mirroring, dedicated preference/rule writes, delete/edit tools,
-version bump, release, or local installation changes in this slice.
+version bump, release, or local installation changes in the implementation slice.
+The subsequent approved delivery step publishes 0.3.11 and updates the local
+client installation without changing profiles or dependencies.
 
 Use focused provider/transport tests for mapping, receipts, validation, errors,
 scope, disabled auto recall, and session changes. Exercise package discovery and
