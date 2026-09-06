@@ -14,14 +14,31 @@ behavior and the separate MCP connector are unchanged.
 
 ## Approved 0.3.11 delivery
 
-- [ ] Verify the release candidate and merge to client main.
-- [ ] Publish 0.3.11 through the existing release workflow and verify artifacts.
-- [ ] Install the public package into local Hermes and the standalone Eve CLI.
-- [ ] Verify installed version, provider discovery, tools, and unchanged profiles.
-- [ ] Synchronize the parent repository's client pointer and release record.
+- [x] Verify the release candidate and merge to client main.
+- [x] Publish 0.3.11 through the existing release workflow and verify artifacts.
+- [x] Install the public package into local Hermes and the standalone Eve CLI.
+- [x] Verify installed version, provider discovery, tools, and unchanged profiles.
+- [x] Synchronize the parent repository's client pointer and release record.
 
 The provider supplies its own tool instructions. Separate Codex and Claude
 skills use a different interface and require no changes for this release.
+
+## Release receipt
+
+- Tag: `eve-memory-client@0.3.11`; release commit:
+  `d6f236f76e9488d08d32116dc2dcc0849c9108e8`.
+- [Release workflow](https://github.com/evememory/eve-client/actions/runs/34035565831):
+  tests, Python build/validation, PyPI publication, macOS and Linux builds passed.
+- [PyPI 0.3.11](https://pypi.org/project/eve-memory-client/0.3.11/) serves the
+  wheel and source archive. Wheel SHA-256:
+  `7b401593738869dc94f6332094f3b9e53cf525a40b0fdeb4f88b80b17d3e411c`.
+- [GitHub release](https://github.com/evememory/eve-client/releases/tag/eve-memory-client%400.3.11).
+- Local Hermes and standalone `eve version` report 0.3.11. Hermes discovers
+  both tools from installed site-packages; the isolated fake-HTTP manager smoke
+  passes with that public installation. No live-memory writes were tested.
+- Only eve-memory-client changed in either environment. Hermes MCP remains
+  2.0.0, and all 14 fingerprinted profile/configuration files are unchanged.
+- Start a new Hermes session to load the new provider instructions and tools.
 
 ## Implementation evidence
 

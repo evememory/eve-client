@@ -1,6 +1,6 @@
 # Hermes interactive Eve tools
 
-Status: implemented and verified; 0.3.11 release and installation approved.
+Status: implemented, verified, released as 0.3.11, and installed locally.
 Tracks eve-client issue #4. Verification and review: [task record](../../tasks/todo.md).
 
 ## Contract
