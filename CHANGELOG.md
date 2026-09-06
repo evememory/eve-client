@@ -2,6 +2,18 @@
 
 This file records notable changes to `eve-memory-client`.
 
+## [0.3.12] - 2026-09-06
+
+### Fixed
+
+- Map native Hermes session identifiers to stable UUIDs in outgoing Eve
+  requests. This fixes `eve_store`, pre-compaction, extraction, and session-end
+  requests rejected by Eve's UUID validation. Valid UUIDs are preserved, and
+  Hermes retains its original session identifiers internally.
+- Classify explicit MCP tool errors separately from malformed responses and
+  report sanitized tool-failure messages. Write completion remains unconfirmed
+  on errors; raw server text is not exposed and calls are not retried.
+
 ## [0.3.11] - 2026-09-06
 
 ### Added

@@ -1,3 +1,29 @@
+# Hermes session UUID fix (issue #5), release 0.3.12
+
+- [x] Reproduce native Hermes session-ID rejection before changing code.
+- [x] Normalize only outbound session IDs across all four write/lifecycle calls.
+- [x] Distinguish explicit MCP tool errors without exposing raw error content.
+- [x] Pass targeted regression, real-validator Hermes smoke, and full tests.
+- [ ] Complete independent review, merge, and publish 0.3.12.
+- [ ] Verify publication and synchronize the parent release record.
+
+Scope: client adapter, regression tests, and release documentation only. No
+server, dependency, profile, retry, new setting, or local-installation changes.
+Preserve Hermes-native session tracking and existing valid UUIDs. The new
+boundary checks must use native-format IDs; the 0.3.11 smoke supplied a UUID
+and did not exercise Eve's UUID validation.
+
+Evidence: four regression tests failed before the fix; the focused suite then
+passed 122 tests. Full suite: 692 passed, 7 skipped, 83% coverage. Provider and
+transport coverage: 96% and 97%. The separate isolated Hermes smoke executed
+the real service `_parse_session_id` validator (extracted without importing the
+service runtime) against all four calls from the real provider/transport and
+Hermes memory manager. It failed before the patch and passed afterward with
+native ID `20260906_154002_167f68` mapped to
+`7e9a96c1-6e60-540b-94e9-3995f21ed866`. No live-memory writes were made.
+Independent Codex review approved the patch and the real-validator smoke;
+no accepted findings remain open.
+
 # Hermes interactive Eve tools (issue #4)
 
 Spec: [confined adapter contract](../docs/specs/2026-09-06-hermes-interactive-tools.md).

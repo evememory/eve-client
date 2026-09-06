@@ -14,7 +14,11 @@ Tracks eve-client issue #4. Verification and review: [task record](../../tasks/t
 - Store accepts content (1–10000 characters), optional context and store.
   Default: configured context and semantic. Only semantic and episodic writes.
   Map content to memory_store.text; source and source_agent are hermes_agent;
-  session_id comes from the active provider. Preserve the exact content.
+  session_id comes from the active provider. At the HTTP boundary, preserve
+  valid UUIDs in canonical form and map other nonempty session IDs using UUIDv5
+  with NAMESPACE_URL and `hermes://session/{session_id}` (0.3.12 correction,
+  issue #5). Apply the same mapping to lifecycle requests; retain native Hermes
+  IDs internally. Preserve the exact content.
 - Accept custom context names under Eve's existing name rules. Reject `all` as
   a write context and EPHEMERAL as persistent scope. The server remains the
   authority for tenant/context permissions. Explicitly use PERSONAL visibility.

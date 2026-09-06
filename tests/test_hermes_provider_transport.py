@@ -13,6 +13,7 @@ import pytest
 
 from eve_client.hermes_provider.transport import (
     EveMcpMalformedResponseError,
+    EveMcpToolError,
     EveMcpTransport,
     EveMcpTransportError,
 )
@@ -579,13 +580,64 @@ def test_rejects_top_level_valid_json_non_object_response(
         transport().call_tool("memory_search", {})
 
 
+def test_normalizes_native_session_ids_without_mutating_caller_arguments(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Break caught: Hermes-native session IDs reach Eve's UUID-only API, or transport mutates caller state.
+    requests: list[list[dict[str, Any]]] = []
+
+    def make_client(*, timeout: httpx.Timeout) -> RecordingClient:
+        client = RecordingClient(timeout=timeout)
+        client.response = successful_response()
+        requests.append(client.requests)
+        return client
+
+    monkeypatch.setattr("eve_client.hermes_provider.transport.httpx.Client", make_client)
+    native_session = "20260906_154002_167f68"
+    arguments = {"session_id": native_session, "text": "remember"}
+
+    transport().call_tool("memory_store", arguments)
+    transport().call_tool("memory_store", arguments)
+    transport().call_tool(
+        "memory_store", {"session_id": "00000000-0000-0000-0000-000000000042", "text": "remember"}
+    )
+
+    normalized = requests[0][0]["json"]["params"]["arguments"]["session_id"]
+    assert normalized == "7e9a96c1-6e60-540b-94e9-3995f21ed866"
+    assert requests[1][0]["json"]["params"]["arguments"]["session_id"] == normalized
+    assert requests[2][0]["json"]["params"]["arguments"]["session_id"] == "00000000-0000-0000-0000-000000000042"
+    assert arguments == {"session_id": native_session, "text": "remember"}
+
+
+def test_classifies_mcp_tool_error_without_exposing_tool_content(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Break caught: an MCP tool execution failure is mistaken for a malformed response or exposes server text.
+    clients: list[RecordingClient] = []
+
+    def make_client(*, timeout: httpx.Timeout) -> RecordingClient:
+        client = RecordingClient(timeout=timeout)
+        client.response = response_with_request_id(httpx.Response(200, json={
+            "jsonrpc": "2.0",
+            "result": {"isError": True, "content": [{"type": "text", "text": "token=private"}]},
+        }))
+        clients.append(client)
+        return client
+
+    monkeypatch.setattr("eve_client.hermes_provider.transport.httpx.Client", make_client)
+    with pytest.raises(EveMcpToolError, match="MCP tool execution failed") as raised:
+        transport().call_tool("memory_search", {"query": REQUEST_CONTENT})
+    assert "private" not in str(raised.value)
+    assert len(clients) == 1
+    assert len(clients[0].requests) == 1
+
+
 @pytest.mark.parametrize(
     "response",
     [
         httpx.Response(200, text="not json " + RESPONSE_CONTENT),
         httpx.Response(200, headers={"content-type": "text/event-stream"}, text="data: not-json\n\n"),
         response_with_request_id(httpx.Response(200, json={"jsonrpc": "2.0", "error": {"message": RESPONSE_CONTENT}})),
-        response_with_request_id(httpx.Response(200, json={"jsonrpc": "2.0", "result": {"isError": True}})),
         response_with_request_id(httpx.Response(200, json={"jsonrpc": "2.0"})),
         response_with_request_id(httpx.Response(200, json={"jsonrpc": "2.0", "result": {"content": []}})),
         response_with_request_id(httpx.Response(200, json={"jsonrpc": "2.0", "result": {"content": [{"type": "text", "text": "not-json"}]}})),

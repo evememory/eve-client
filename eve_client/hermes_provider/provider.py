@@ -17,7 +17,7 @@ from agent.memory_provider import MemoryProvider
 from agent.secret_scope import get_secret
 
 from eve_client.atomic import atomic_write
-from eve_client.hermes_provider.transport import EveMcpTransport
+from eve_client.hermes_provider.transport import EveMcpToolError, EveMcpTransport
 
 _ENDPOINT = "https://mcp.evemem.com/mcp"
 _CONFIG_FILE = "eve.json"
@@ -317,6 +317,13 @@ class EveMemoryProvider(MemoryProvider):
             remote_tool = "memory_search"
         try:
             result = transport.call_tool(remote_tool, payload)
+        except EveMcpToolError:
+            message = (
+                "Eve tool execution failed; write completion is unconfirmed"
+                if write
+                else "Eve tool execution failed"
+            )
+            return self._tool_error(message)
         except Exception:
             message = "Eve write completion is unconfirmed" if write else "Eve search failed"
             return self._tool_error(message)

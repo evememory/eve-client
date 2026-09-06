@@ -10,6 +10,7 @@ import sys
 import threading
 import time
 import types
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -55,7 +56,7 @@ sys.modules.setdefault("agent.secret_scope", secret_scope_module)
 
 from eve_client.hermes_provider import provider as provider_module
 from eve_client.hermes_provider.provider import EveMemoryProvider, register
-from eve_client.hermes_provider.transport import EveMcpTransport
+from eve_client.hermes_provider.transport import EveMcpToolError, EveMcpTransport
 
 
 class _RecordingTransport:
@@ -132,8 +133,85 @@ def test_interactive_tools_map_store_through_real_transport_http_boundary(
     assert requests[0]["url"] == "https://memory.example/mcp"
     assert requests[0]["json"]["params"] == {"name": "memory_store", "arguments": {
         "text": "Keep exact  text", "source": "hermes_agent", "source_agent": "hermes_agent",
-        "session_id": "session-1", "store": "semantic", "context": "personal", "visibility": "PERSONAL",
+        "session_id": str(uuid.uuid5(uuid.NAMESPACE_URL, "hermes://session/session-1")), "store": "semantic", "context": "personal", "visibility": "PERSONAL",
     }}
+
+
+def test_native_hermes_session_id_reaches_all_lifecycle_tools_as_stable_uuid(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Break caught: a native Hermes ID fails Eve UUID validation in an interactive or lifecycle request.
+    received: list[tuple[str, str]] = []
+
+    class ResponseStream:
+        def __init__(self, response: httpx.Response) -> None:
+            self.response = response
+
+        def __enter__(self) -> httpx.Response:
+            return self.response
+
+        def __exit__(self, *args: object) -> None:
+            self.response.close()
+
+    class UuidValidatingBoundary:
+        def __init__(self, *, timeout: httpx.Timeout) -> None:
+            del timeout
+
+        def __enter__(self) -> UuidValidatingBoundary:
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def stream(self, method: str, url: str, **kwargs: Any) -> ResponseStream:
+            del method, url
+            request = kwargs["json"]
+            arguments = request["params"]["arguments"]
+            session_id = arguments.get("session_id")
+            uuid.UUID(session_id)
+            received.append((request["params"]["name"], session_id))
+            return ResponseStream(httpx.Response(200, json={
+                "jsonrpc": "2.0", "id": request["id"],
+                "result": {"structuredContent": {"result": "{}"}, "isError": False},
+            }))
+
+    monkeypatch.setattr("eve_client.hermes_provider.transport.httpx.Client", UuidValidatingBoundary)
+    provider = EveMemoryProvider()
+    provider._active = True
+    provider._session_id = "20260906_154002_167f68"
+    provider._transport = EveMcpTransport("https://memory.example/mcp", "key", httpx.Timeout(2))
+
+    assert json.loads(provider.handle_tool_call("eve_store", {"content": "keep"})) == {}
+    provider.on_pre_compress([{"role": "user", "content": "compact this"}])
+    provider.on_session_end()
+    provider.on_session_switch("20260906_154003_aabbcc")
+    provider.on_pre_compress([{"role": "user", "content": "other session"}])
+
+    assert [name for name, _ in received] == [
+        "memory_store", "memory_pre_compact", "memory_extract", "memory_session_end", "memory_pre_compact",
+    ]
+    assert received[:4] == [
+        ("memory_store", "7e9a96c1-6e60-540b-94e9-3995f21ed866"),
+        ("memory_pre_compact", "7e9a96c1-6e60-540b-94e9-3995f21ed866"),
+        ("memory_extract", "7e9a96c1-6e60-540b-94e9-3995f21ed866"),
+        ("memory_session_end", "7e9a96c1-6e60-540b-94e9-3995f21ed866"),
+    ]
+    assert received[4] == ("memory_pre_compact", "f097f9ef-d073-5b67-b54e-99435783ef00")
+
+
+def test_interactive_tool_execution_failure_is_redacted_and_unconfirmed() -> None:
+    # Break caught: an Eve tool failure leaks server text or claims a write completed.
+    class ToolFailingTransport(_RecordingTransport):
+        def call_tool(self, tool_name: str, arguments: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
+            self.calls.append((tool_name, arguments))
+            raise EveMcpToolError("server token=private")
+
+    transport = ToolFailingTransport()
+    provider = _active_provider(transport)
+    result = json.loads(provider.handle_tool_call("eve_store", {"content": "remember"}))
+
+    assert result == {"error": "Eve tool execution failed; write completion is unconfirmed"}
+    assert "private" not in json.dumps(result)
 
 
 def test_interactive_tools_validate_before_call_and_reject_stale_session() -> None:

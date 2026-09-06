@@ -135,7 +135,9 @@ Hermes's built-in memory tool still manages local `MEMORY.md` and `USER.md`;
 those edits are not mirrored into Eve. Delete/edit operations remain outside
 the native provider's two-tool interface.
 
-The interactive tools require `eve-memory-client` 0.3.11 or newer. After an
+Use `eve-memory-client` 0.3.12 or newer for native Hermes tools. Version 0.3.11
+introduced the tools but could not save with Hermes's non-UUID session IDs;
+0.3.12 maps those IDs to stable UUIDs without changing Hermes sessions. After an
 upgrade, restart the running Hermes process (CLI, Desktop, or gateway), then
 start a new session to load the updated provider and its instructions. No
 separate skill installation is required.
@@ -544,7 +546,7 @@ Build Python artifacts:
 uv build .
 ```
 
-The current release is `eve-memory-client` 0.3.11. See
+The current release is `eve-memory-client` 0.3.12. See
 [`CHANGELOG.md`](CHANGELOG.md) for release details.
 
 Check build artifacts:
@@ -560,7 +562,7 @@ bash scripts/build-eve-client-release.sh
 ```
 
 Release tags for the PyPI distribution use `eve-memory-client@<version>`, for
-example `eve-memory-client@0.3.11`.
+example `eve-memory-client@0.3.12`.
 
 ## License
 

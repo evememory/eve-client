@@ -24,7 +24,7 @@ class EveMcpTransportError(Exception):
 
 
 class EveMcpToolError(EveMcpTransportError):
-    """The requested tool is outside the fixed transport allowlist."""
+    """The tool is disallowed or the MCP service reports a tool execution failure."""
 
 
 class EveMcpAuthenticationError(EveMcpTransportError):
@@ -68,11 +68,21 @@ class EveMcpTransport:
         timeout = timeout_override if timeout_override is not None else self._timeout
         self._validate_timeout(timeout)
 
+        outbound_arguments = dict(arguments)
+        session_id = outbound_arguments.get("session_id")
+        if isinstance(session_id, str) and session_id:
+            try:
+                outbound_arguments["session_id"] = str(uuid.UUID(session_id))
+            except ValueError:
+                outbound_arguments["session_id"] = str(
+                    uuid.uuid5(uuid.NAMESPACE_URL, f"hermes://session/{session_id}")
+                )
+
         request_body = {
             "jsonrpc": "2.0",
             "id": str(uuid.uuid4()),
             "method": "tools/call",
-            "params": {"name": tool_name, "arguments": dict(arguments)},
+            "params": {"name": tool_name, "arguments": outbound_arguments},
         }
         headers = {
             "X-API-Key": self._api_key,
@@ -187,8 +197,10 @@ class EveMcpTransport:
         ):
             raise EveMcpMalformedResponseError("MCP JSON-RPC failure")
         result = envelope.get("result")
-        if not isinstance(result, Mapping) or result.get("isError") is True:
+        if not isinstance(result, Mapping):
             raise EveMcpMalformedResponseError("Malformed MCP tool result")
+        if result.get("isError") is True:
+            raise EveMcpToolError("MCP tool execution failed")
 
         encoded_result: Any = None
         structured_content = result.get("structuredContent")
